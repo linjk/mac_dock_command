@@ -2,7 +2,7 @@
 
 ## 当前阶段
 
-Task 7 已完成：AppModel 启停状态机与编辑/删除闸门。下一步 Task 8（Popover 列表与编辑 Sheet）。
+Task 8 已完成：Popover 列表、编辑 Sheet、NSAlert Prompter。下一步 Task 9（独立日志窗口）。
 
 ## 已完成
 
@@ -19,6 +19,7 @@ Task 7 已完成：AppModel 启停状态机与编辑/删除闸门。下一步 Ta
 - Task 5：`PortDetector` / `PortTracker` / `LsofParser`；`LsofClient` 仅 protocol；`PortDetectorTests` 11 例通过（四级正则、拒绝时间/版本、优先级覆盖、交集/最小用户端口/连续空 lsof、`:port (LISTEN)` 解析）。未跑真 `lsof`
 - Task 6：`ProcessControlling` / `ProcessSpawner` / `ProcessTree` / `ProcessManager`；`ProcessSpawnerTests` 2 例 + `ProcessManagerTests` 2 例通过（zsh/bash source rc 与 export、echo 退出码 3、stdout+stderr、`sleep 30` 在 8s 内被杀掉）。未接 AppModel
 - Task 7：`UserPrompter` / `AppModel`；`AppModelTests` 10 例通过（启停状态机、cwd 缺失中文日志、编辑/删除闸门、外部 YAML 删掉运行中命令先挂起）。无 SwiftUI；`requestQuit` 仅 `NSApp.terminate(nil)`；lsof 轮询留给 Task 10
+- Task 8：`MenuBarView` / `CommandRowView` / `CommandEditSheet` / `AlertPrompter`；空 `AppDelegate` 仅 `.accessory`；`load()` 失败写 `loadError` 并试 `.bak`。无日志 WindowGroup（Task 9）；退出确认留给 Task 11
 
 ## 进行中
 
@@ -26,7 +27,7 @@ Task 7 已完成：AppModel 启停状态机与编辑/删除闸门。下一步 Ta
 
 ## 待办
 
-- 按 plan 实现 MVP（Task 8–12）
+- 按 plan 实现 MVP（Task 9–12）
 - 手动验证：`npx @deepseek-ai/dsh web`、nvm/conda、YAML 外部重载、退出杀进程
 
 ## 阻塞
@@ -35,6 +36,8 @@ Task 7 已完成：AppModel 启停状态机与编辑/删除闸门。下一步 Ta
 
 ## 最近验证
 
+- 2026-09-05：`xcodebuild -project BarCmd/BarCmd.xcodeproj -scheme BarCmd -destination 'platform=macOS' build` → `** BUILD SUCCEEDED **`（Task 8 Popover / Sheet / AlertPrompter）
+- 2026-09-05：`xcodebuild -project BarCmd/BarCmd.xcodeproj -scheme BarCmd -destination 'platform=macOS' test` → `** TEST SUCCEEDED **`（Executed 42 tests, 0 failures）
 - 2026-09-05：`xcodebuild -project BarCmd/BarCmd.xcodeproj -scheme BarCmd -destination 'platform=macOS' test -only-testing:BarCmdTests/AppModelTests` → RED（`AppModel`/`UserPrompter` 找不到）后 GREEN（10 tests, 0 failures）
 - 2026-09-05：`xcodebuild -project BarCmd/BarCmd.xcodeproj -scheme BarCmd -destination 'platform=macOS' test` → `** TEST SUCCEEDED **`（Executed 42 tests, 0 failures）
 - 2026-09-05：`xcodebuild -project BarCmd/BarCmd.xcodeproj -scheme BarCmd -destination 'platform=macOS' test -only-testing:BarCmdTests/PortDetectorTests` → RED（`PortDetector`/`PortTracker`/`LsofParser` 找不到）后 GREEN（11 tests, 0 failures）

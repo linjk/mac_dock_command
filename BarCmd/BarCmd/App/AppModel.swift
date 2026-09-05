@@ -39,7 +39,7 @@ final class AppModel {
             configs = try store.load()
         } catch {
             loadError = error.localizedDescription
-            configs = []
+            configs = (try? store.loadBackup()) ?? []
         }
         for config in configs {
             runtimes[config.id] = CommandRuntime()
@@ -48,6 +48,12 @@ final class AppModel {
 
     func runtime(_ id: UUID) -> CommandRuntime {
         runtimes[id] ?? CommandRuntime()
+    }
+
+    func presentLoadErrorIfNeeded() async {
+        guard let message = loadError else { return }
+        loadError = nil
+        await prompter.alert(title: "配置加载失败", message: message)
     }
 
     func start(_ id: UUID) async {

@@ -51,6 +51,16 @@ final class ConfigStore {
         }
     }
 
+    func loadBackup() throws -> [CommandConfig] {
+        let text = try String(contentsOf: backupURL, encoding: .utf8)
+        do {
+            let file = try YAMLDecoder().decode(CommandsFile.self, from: text)
+            return file.commands
+        } catch {
+            throw ConfigError(line: nil, message: error.localizedDescription)
+        }
+    }
+
     func save(_ configs: [CommandConfig]) throws {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let text = try YAMLEncoder().encode(CommandsFile(commands: configs))
