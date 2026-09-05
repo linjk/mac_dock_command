@@ -45,6 +45,7 @@
 
 ## 最近验证
 
+- 2026-09-05：`./scripts/release.sh` 打出 `dist/BarCmd-0.1.1.zip`。`VERSION` / Info.plist 现为 `0.1.1`（build 2）。echo 紧贴中文括号导致 `set -u` 的问题已用 `printf` 修掉。
 - 2026-09-05：当前版本改记仓库根目录 `VERSION`（`0.1.0`）。`release.sh` 默认从该文件补丁 +1，写回 `VERSION` 与 Info.plist；两处不一致则失败。`bash -n scripts/release.sh` 通过。未跑完整打包。
 - 2026-09-05：App 登录自启（`SMAppService` + 底栏开关 + 首次确认）与 `scripts/release.sh`（Info.plist 升版、Release zip、`--install`）。`AppModelTests` 新增 4 例登录项；`bash -n scripts/release.sh` 通过。全量 `xcodebuild … test` → **TEST SUCCEEDED**（Executed 65 tests, 0 failures）。未跑 `--install`。
 - 2026-09-05：已重启 21:28 Debug 包仍看不到 DSH。YAML / `.bak` 均有 echo-test + DSH。Extra 里无高度的 `ScrollView` 会裁第二条；打开时也不从磁盘对齐。改为按行数定高 + `onAppear` 调 `applyExternalReload`，模型只挂 `AppDelegate`。新增 `testApplyExternalReloadPicksUpCommandWrittenToDisk`。全量 `xcodebuild … test` → **TEST SUCCEEDED**（Executed 61 tests, 0 failures）。手点菜单栏 **待确认**

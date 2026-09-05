@@ -74,11 +74,18 @@ if [[ ! "$current_build" =~ ^[0-9]+$ ]]; then
 fi
 next_build=$((current_build + 1))
 
+restore_version() {
+  printf '%s\n' "$current_short" > "$VERSION_FILE"
+  "$PBUDDY" -c "Set :CFBundleShortVersionString $current_short" "$PLIST"
+  "$PBUDDY" -c "Set :CFBundleVersion $current_build" "$PLIST"
+}
+
 printf '%s\n' "$VERSION" > "$VERSION_FILE"
 "$PBUDDY" -c "Set :CFBundleShortVersionString $VERSION" "$PLIST"
 "$PBUDDY" -c "Set :CFBundleVersion $next_build" "$PLIST"
+trap restore_version ERR
 
-echo "版本 $VERSION（build $next_build），已写入 VERSION"
+printf '版本 %s (build %s)，已写入 VERSION\n' "$VERSION" "$next_build"
 
 xcodebuild \
   -project "$PROJECT" \
@@ -102,6 +109,7 @@ ZIP="$DIST/BarCmd-$VERSION.zip"
 rm -f "$ZIP"
 ditto -c -k --keepParent "$DIST/BarCmd.app" "$ZIP"
 
+trap - ERR
 echo "已生成 $ZIP"
 
 if [[ "$INSTALL" -eq 1 ]]; then
