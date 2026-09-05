@@ -72,6 +72,10 @@ final class FakeProcess: ProcessControlling, @unchecked Sendable {
     }
 }
 
+struct FakeLsofClient: LsofClient {
+    func listeningPorts(pids: [Int32]) throws -> [Int] { [] }
+}
+
 final class FakePrompter: UserPrompter {
     var confirmStopForEditResult = true
     var confirmStopForDeleteResult = true

@@ -164,7 +164,13 @@ final class AppModelTests: XCTestCase {
         try store.save(configs)
         let processes = FakeProcess()
         let logs = LogBufferStore()
-        let model = AppModel(store: store, processes: processes, logs: logs, prompter: prompter)
+        let model = AppModel(
+            store: store,
+            processes: processes,
+            logs: logs,
+            prompter: prompter,
+            lsof: FakeLsofClient()
+        )
         return (model, store, processes, logs, prompter)
     }
 

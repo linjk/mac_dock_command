@@ -19,24 +19,30 @@ final class AppModel {
 
     let logs: LogBufferStore
 
+    var lsof: LsofClient
+
     private let store: ConfigStore
     private let processes: ProcessControlling
     private let prompter: UserPrompter
     private var stoppingIDs: Set<UUID> = []
     private var portTrackers: [UUID: PortTracker] = [:]
+    private var portPollTasks: [UUID: Task<Void, Never>] = [:]
+    private var consecutiveEmptyLsof: [UUID: Int] = [:]
 
     init(
         store: ConfigStore,
         processes: ProcessControlling,
         logs: LogBufferStore,
         prompter: UserPrompter,
-        openLogWindow: @escaping (UUID) -> Void = { _ in }
+        openLogWindow: @escaping (UUID) -> Void = { _ in },
+        lsof: LsofClient = RealLsofClient()
     ) {
         self.store = store
         self.processes = processes
         self.logs = logs
         self.prompter = prompter
         self.openLogWindow = openLogWindow
+        self.lsof = lsof
         do {
             configs = try store.load()
         } catch {
@@ -103,6 +109,7 @@ final class AppModel {
             r.startedAt = Date()
             r.status = .running
             runtimes[id] = r
+            startPortPolling(id)
         } catch {
             logs.append(id: id, line: "启动失败：\(error.localizedDescription)")
             r = runtime(id)
@@ -208,6 +215,7 @@ final class AppModel {
 
         let surviving = freshIDs.union(hung.map(\.id))
         for id in Array(runtimes.keys) where !surviving.contains(id) {
+            cancelPortPolling(id)
             runtimes[id] = nil
             logs.remove(id: id)
             portTrackers[id] = nil
@@ -231,6 +239,7 @@ final class AppModel {
     private func handleExit(id: UUID, code: Int32) {
         let current = runtime(id).status
         guard current == .running || current == .starting else { return }
+        cancelPortPolling(id)
         let requestedStop = stoppingIDs.contains(id)
         stoppingIDs.remove(id)
         var r = runtime(id)
@@ -254,7 +263,62 @@ final class AppModel {
         }
     }
 
+    private func startPortPolling(_ id: UUID) {
+        cancelPortPolling(id)
+        portPollTasks[id] = Task { [weak self] in
+            while !Task.isCancelled {
+                guard let self else { break }
+                await self.pollPorts(id: id)
+                guard !Task.isCancelled else { break }
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+            }
+        }
+    }
+
+    private func pollPorts(id: UUID) async {
+        guard runtime(id).status == .running else {
+            cancelPortPolling(id)
+            return
+        }
+        guard let snapshot = await processes.runtimeSnapshot(id: id) else { return }
+
+        let client = lsof
+        let ports: [Int]
+        do {
+            ports = try await Task.detached {
+                let groupPIDs = ProcessTree.pids(inGroup: snapshot.pgid)
+                let pids = groupPIDs.isEmpty ? ProcessTree.descendantPIDs(of: snapshot.pid) : groupPIDs
+                return try client.listeningPorts(pids: pids)
+            }.value
+        } catch {
+            return
+        }
+
+        guard runtime(id).status == .running else { return }
+
+        if ports.isEmpty {
+            consecutiveEmptyLsof[id, default: 0] += 1
+        } else {
+            consecutiveEmptyLsof[id] = 0
+        }
+        let emptyCount = consecutiveEmptyLsof[id] ?? 0
+        var r = runtime(id)
+        r.port = PortDetector.merge(
+            logPort: portTrackers[id]?.logPort,
+            lsofPorts: ports,
+            consecutiveEmptyLsof: emptyCount
+        )
+        runtimes[id] = r
+    }
+
+    private func cancelPortPolling(_ id: UUID) {
+        portPollTasks[id]?.cancel()
+        portPollTasks[id] = nil
+        consecutiveEmptyLsof[id] = nil
+    }
+
     private func removeConfig(_ id: UUID) {
+        cancelPortPolling(id)
         configs.removeAll { $0.id == id }
         runtimes[id] = nil
         logs.remove(id: id)
