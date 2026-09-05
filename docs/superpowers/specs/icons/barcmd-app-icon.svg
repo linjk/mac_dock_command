@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-label="BarCmd">
+  <!-- Icon C: slate squircle, white brackets, mint play -->
+  <rect width="1024" height="1024" rx="228" fill="#243447"/>
+  <!-- left bracket [ -->
+  <path fill="#F2F2F7" d="M312 236h-92c-13 0-24 11-24 24v504c0 13 11 24 24 24h92v-72h-44V308h44V236z"/>
+  <!-- right bracket ] -->
+  <path fill="#F2F2F7" d="M712 236h92c13 0 24 11 24 24v504c0 13-11 24-24 24h-92v-72h44V308h-44V236z"/>
+  <!-- play triangle -->
+  <path fill="#30D158" d="M424 352l248 160-248 160V352z"/>
+</svg>

@@ -5,3 +5,8 @@ xcuserdata/
 DerivedData/
 .build/
 *.app
+*.xccheckout
+*.xcscmblueprint
+.idea/
+.vscode/
+.cursor/
