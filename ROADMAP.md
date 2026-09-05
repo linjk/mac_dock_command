@@ -2,7 +2,7 @@
 
 ## 当前阶段
 
-Task 1 已完成：Xcode 工程可编译。下一步 Task 2（模型与配置）。
+Task 2 已完成：命令值类型与路径展开可单测。下一步 Task 3（ConfigStore）。
 
 ## 已完成
 
@@ -13,6 +13,7 @@ Task 1 已完成：Xcode 工程可编译。下一步 Task 2（模型与配置）
 - 项目约定：`CLAUDE.md`
 - 实现计划：`docs/superpowers/plans/2026-09-02-barcmd-implementation.md`
 - Task 1：Xcode 工程、身份、图标（`BarCmd` scheme 可 `xcodebuild` 编译；无占位单测）
+- Task 2：`CommandStatus` / `CommandConfig` / `CommandRuntime` / `PathExpand`；`PathExpandTests` 4 例通过
 
 ## 进行中
 
@@ -20,7 +21,7 @@ Task 1 已完成：Xcode 工程可编译。下一步 Task 2（模型与配置）
 
 ## 待办
 
-- 按 plan 实现 MVP（Task 2–12）
+- 按 plan 实现 MVP（Task 3–12）
 - 手动验证：`npx @deepseek-ai/dsh web`、nvm/conda、YAML 外部重载、退出杀进程
 
 ## 阻塞
@@ -29,6 +30,5 @@ Task 1 已完成：Xcode 工程可编译。下一步 Task 2（模型与配置）
 
 ## 最近验证
 
-- 2026-09-05：`xcodebuild -project BarCmd/BarCmd.xcodeproj -scheme BarCmd -destination 'platform=macOS' build` → `** BUILD SUCCEEDED **`
-- 产物核对：`CFBundleIdentifier=com.dorian.barcmd`，`LSUIElement=true`，entitlements 无 App Sandbox
-- 未做：启动 App 目视菜单栏图标 / Dock 是否隐藏（Task 1 验证以编译为准）
+- 2026-09-05：`xcodebuild -project BarCmd/BarCmd.xcodeproj -scheme BarCmd -destination 'platform=macOS' test -only-testing:BarCmdTests/PathExpandTests` → RED（`PathExpand` 找不到）后 GREEN（4 tests, 0 failures）
+- 2026-09-05：`xcodebuild -project BarCmd/BarCmd.xcodeproj -scheme BarCmd -destination 'platform=macOS' test` → `** TEST SUCCEEDED **`（Executed 4 tests, 0 failures）
