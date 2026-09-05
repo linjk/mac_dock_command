@@ -16,6 +16,7 @@ final class AppModel {
     }
 
     var openLogWindow: (UUID) -> Void
+    var openEditWindow: (UUID) -> Void
 
     let logs: LogBufferStore
 
@@ -36,6 +37,7 @@ final class AppModel {
         logs: LogBufferStore,
         prompter: UserPrompter,
         openLogWindow: @escaping (UUID) -> Void = { _ in },
+        openEditWindow: @escaping (UUID) -> Void = { _ in },
         lsof: LsofClient = RealLsofClient()
     ) {
         self.store = store
@@ -43,6 +45,7 @@ final class AppModel {
         self.logs = logs
         self.prompter = prompter
         self.openLogWindow = openLogWindow
+        self.openEditWindow = openEditWindow
         self.lsof = lsof
         do {
             configs = try store.load()
@@ -174,8 +177,20 @@ final class AppModel {
             guard await prompter.confirmStopForEdit(name: name) else { return false }
             await stop(id)
         }
-        pendingEdit = configs.first(where: { $0.id == id })
+        guard let draft = configs.first(where: { $0.id == id }) else { return false }
+        presentEditor(draft)
         return true
+    }
+
+    func presentEditor(_ config: CommandConfig) {
+        pendingEdit = config
+        NSApp.activate(ignoringOtherApps: true)
+        openEditWindow(config.id)
+    }
+
+    func dismissEditor(id: UUID? = nil) {
+        if let id, pendingEdit?.id != id { return }
+        pendingEdit = nil
     }
 
     func requestDelete(_ id: UUID) async -> Bool {

@@ -114,6 +114,56 @@ final class AppModelTests: XCTestCase {
         XCTAssertEqual(model.runtime(id).status, .stopped)
     }
 
+    func testPresentEditorSetsPendingAndOpensWindow() throws {
+        let id = UUID()
+        let config = CommandConfig(id: id, name: "web", command: "echo ok")
+        let (model, _, _, _, _) = try makeHarness(configs: [config])
+        var opened: UUID?
+        model.openEditWindow = { opened = $0 }
+
+        model.presentEditor(config)
+
+        XCTAssertEqual(model.pendingEdit?.id, id)
+        XCTAssertEqual(opened, id)
+    }
+
+    func testRequestEditOpensEditWindow() async throws {
+        let id = UUID()
+        let config = CommandConfig(id: id, name: "web", command: "echo ok")
+        let (model, _, _, _, _) = try makeHarness(configs: [config])
+        var opened: UUID?
+        model.openEditWindow = { opened = $0 }
+
+        let ok = await model.requestEdit(id)
+
+        XCTAssertTrue(ok)
+        XCTAssertEqual(model.pendingEdit?.id, id)
+        XCTAssertEqual(opened, id)
+    }
+
+    func testDismissEditorClearsPendingEdit() throws {
+        let id = UUID()
+        let config = CommandConfig(id: id, name: "web", command: "echo ok")
+        let (model, _, _, _, _) = try makeHarness(configs: [config])
+        model.presentEditor(config)
+
+        model.dismissEditor(id: id)
+
+        XCTAssertNil(model.pendingEdit)
+    }
+
+    func testDismissEditorIgnoresOtherID() throws {
+        let id = UUID()
+        let other = UUID()
+        let config = CommandConfig(id: id, name: "web", command: "echo ok")
+        let (model, _, _, _, _) = try makeHarness(configs: [config])
+        model.presentEditor(config)
+
+        model.dismissEditor(id: other)
+
+        XCTAssertEqual(model.pendingEdit?.id, id)
+    }
+
     func testRequestDeleteStoppedConfirmTrueRemovesAndSaves() async throws {
         let id = UUID()
         let config = CommandConfig(id: id, name: "web", command: "echo ok")
@@ -125,6 +175,24 @@ final class AppModelTests: XCTestCase {
         XCTAssertTrue(deleted)
         XCTAssertTrue(model.configs.isEmpty)
         XCTAssertTrue(try store.load().isEmpty)
+    }
+
+    func testApplyExternalReloadPicksUpCommandWrittenToDisk() throws {
+        let echo = CommandConfig(
+            id: UUID(uuidString: "11111111-1111-1111-1111-111111111111")!,
+            name: "echo-test",
+            command: "echo hello-barcmd; sleep 8"
+        )
+        let dsh = CommandConfig(
+            id: UUID(uuidString: "8E0094E8-B169-40A8-80AD-566B66967712")!,
+            name: "DSH",
+            command: "npx @deepseek-ai/dsh web"
+        )
+        let (model, store, _, _, _) = try makeHarness(configs: [echo])
+        try store.save([echo, dsh])
+        try model.applyExternalReload()
+        XCTAssertEqual(model.configs.map(\.name), ["echo-test", "DSH"])
+        XCTAssertEqual(model.configs.map(\.id), [echo.id, dsh.id])
     }
 
     func testApplyExternalReloadKeepsRunningRemovedUntilStop() async throws {

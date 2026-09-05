@@ -31,6 +31,8 @@ Task 12：自动化测试已通过；README 已补。手动清单未全部手测
 
 ## 待办
 
+- 手动验证（待确认）：打开菜单栏应同时看到 echo-test 与 DSH（打开 Extra 会 `applyExternalReload`，列表按行数定高；无 Accessibility，未手点）
+- 手动验证（待确认）：再次打开编辑窗口后，点 Name / Command 输入框，窗口应保持打开并可输入（已从 Extra `.sheet` 改为独立 `WindowGroup`；无 Accessibility，未手点）
 - 手动验证（待确认）：`npx @deepseek-ai/dsh web` 启停与 `:port`、nvm/conda 命令里能找到二进制、有 running 时退出杀进程组、运行中点编辑/删除必须先停、菜单栏 glyph 肉眼确认
 - 手动验证（部分）：外部改 YAML 会弹出重载确认框（本机已见到 260×176 对话框；未点「重载」，列表是否更新未确认）
 
@@ -40,6 +42,9 @@ Task 12：自动化测试已通过；README 已补。手动清单未全部手测
 
 ## 最近验证
 
+- 2026-09-05：已重启 21:28 Debug 包仍看不到 DSH。YAML / `.bak` 均有 echo-test + DSH。Extra 里无高度的 `ScrollView` 会裁第二条；打开时也不从磁盘对齐。改为按行数定高 + `onAppear` 调 `applyExternalReload`，模型只挂 `AppDelegate`。新增 `testApplyExternalReloadPicksUpCommandWrittenToDisk`。全量 `xcodebuild … test` → **TEST SUCCEEDED**（Executed 61 tests, 0 failures）。手点菜单栏 **待确认**
+- 2026-09-05：添加命令后 YAML 有 DSH，列表不刷新。根因是编辑独立窗口拆掉 Extra 后，`MenuBarExtra` 复用旧 body，不重读 `configs`。`BarCmdApp.body` 直接读命令 ID，Extra 内容 `.id` 绑到该列表。磁盘 `commands.yaml` 已含 echo-test + DSH。全量 `xcodebuild … test` → **TEST SUCCEEDED**（Executed 60 tests, 0 failures）。手点菜单栏 **待确认**
+- 2026-09-05：编辑表单再点输入即关。根因是 `.sheet` 挂在 `MenuBarExtra` 上，点表单等于点 Extra 外，Popover 拆除。改为 `WindowGroup(id: "command-edit")` + `presentEditor` / `dismissEditor`。`AppModelTests` 20/0；全量 `xcodebuild … test` → **TEST SUCCEEDED**（Executed 60 tests, 0 failures）。手点输入框 **待确认**
 - 2026-09-05：整分支评审三项 Important：`start`/`handleExit` 清空 PortTracker；ProcessManager 按 pid 匹配退出并等 teardown；`persist` 失败 `prompter.alert`「保存配置失败」。覆盖 `AppModelTests` 16/0 + `ProcessManagerTests` 3/0；全量 `xcodebuild -project BarCmd/BarCmd.xcodeproj -scheme BarCmd -destination 'platform=macOS' test` → **TEST SUCCEEDED**（Executed 56 tests, 0 failures）
 - 2026-09-02：Task 12 全量 `xcodebuild -project BarCmd/BarCmd.xcodeproj -scheme BarCmd -destination 'platform=macOS' test` → **TEST SUCCEEDED**（Executed 53 tests, 0 failures）
 - 2026-09-02：启动 Debug `BarCmd.app`（pid 曾为 44478）。Dock 常规应用列表无 BarCmd；进程 `background only`。`LSUIElement` + `setActivationPolicy(.accessory)` 与此一致

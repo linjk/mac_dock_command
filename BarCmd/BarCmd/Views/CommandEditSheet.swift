@@ -1,5 +1,28 @@
 import SwiftUI
 
+struct CommandEditWindow: View {
+    let commandID: UUID
+    let model: AppModel
+
+    private var draft: CommandConfig? {
+        if let pending = model.pendingEdit, pending.id == commandID {
+            return pending
+        }
+        return model.configs.first { $0.id == commandID }
+    }
+
+    var body: some View {
+        Group {
+            if let draft {
+                CommandEditSheet(model: model, draft: draft)
+            }
+        }
+        .onDisappear {
+            model.dismissEditor(id: commandID)
+        }
+    }
+}
+
 struct CommandEditSheet: View {
     let model: AppModel
     let draft: CommandConfig
@@ -39,7 +62,7 @@ struct CommandEditSheet: View {
 
             HStack {
                 Spacer()
-                Button("取消") { dismiss() }
+                Button("取消") { close() }
                 Button("保存") { Task { await save() } }
                     .keyboardShortcut(.defaultAction)
                     .disabled(!canSave)
@@ -70,6 +93,11 @@ struct CommandEditSheet: View {
         } else {
             await model.update(config)
         }
+        close()
+    }
+
+    private func close() {
+        model.dismissEditor(id: draft.id)
         dismiss()
     }
 

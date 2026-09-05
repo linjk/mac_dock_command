@@ -337,8 +337,19 @@ YAML 字段：`id`（UUID 字符串）、`name`、`command`、`cwd`（省略则 
 |------|------|
 | `MenuBarView` | 列表、底栏（添加 / 打开配置 / 退出）、空状态「还没有命令」 |
 | `CommandRowView` | 状态点、名称、按钮、副行、PID/port |
-| `CommandEditSheet` | 添加与编辑共用 |
+| `CommandEditSheet` | 添加与编辑共用（独立窗口，不挂 Extra） |
 | `LogWindowView` | 等宽、深色、自动滚底；复制全部、清屏；PID/port/时长 |
+
+编辑窗口（不要用 Extra 上的 `.sheet`：点表单等于点到 Extra 外，Popover 拆除，表单一起关）：
+
+```swift
+WindowGroup(id: "command-edit", for: UUID.self) { $id in
+    CommandEditSheet(commandID: id)
+}
+.defaultSize(width: 460, height: 360)
+```
+
+`presentEditor` 写 `pendingEdit` 并 `openWindow(id: "command-edit", value: id)`。同 id 聚焦已有窗口。取消 / 保存 / 关窗清 `pendingEdit`。
 
 日志窗口：
 
@@ -351,7 +362,7 @@ WindowGroup(id: "command-log", for: UUID.self) { $id in
 
 `openLog` 调 `openWindow(id: "command-log", value: id)`。同 id 聚焦已有窗口。关窗不停进程。
 
-Popover 宽度约 420pt，列表可滚动。一行五个按钮挤不下时：主行保留 ▶ ⏹ 📋，✎ 🗑 放上下文菜单或 hover 溢出，但 **必须可发现**。优先：主行五个图标按钮，名称 `lineLimit(1)`。
+Popover 宽度约 420pt。列表按行数给明确高度（单行约 76pt，最高 360pt），`ScrollView` 不能没高度，否则 Extra 会裁掉第二条。打开 Extra 时 `applyExternalReload`，磁盘有的命令必须出现在列表。一行五个按钮挤不下时：主行保留 ▶ ⏹ 📋，✎ 🗑 放上下文菜单或 hover 溢出，但 **必须可发现**。优先：主行五个图标按钮，名称 `lineLimit(1)`。
 
 `starting`：灰点 + `ProgressView` 小转圈。绿/灰/红对应 running/stopped/exited。
 
@@ -391,6 +402,8 @@ Popover 宽度约 420pt，列表可滚动。一行五个按钮挤不下时：主
 颜色：底 `#243447`，括号 `#F2F2F7`，三角 `#30D158`。菜单栏 glyph 只有黑+透明，无 squircle 底。
 
 `MenuBarExtra` 的 `label` 用 `Image("MenuBarIcon")`，不要 SF Symbol。
+
+`MenuBarExtra` 关掉后不会因为 `configs` 变了而重算 body（编辑独立窗口会拆掉 Extra）。`BarCmdApp.body` 必须直接读 `model.configs`，并把 Extra 内容 `.id` 绑到命令 ID 列表，否则保存成功、YAML 有了，列表仍是旧的。
 
 ## 错误到 UI
 

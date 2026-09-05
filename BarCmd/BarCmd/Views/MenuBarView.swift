@@ -5,6 +5,10 @@ struct MenuBarView: View {
     @Bindable var model: AppModel
     @Environment(\.openWindow) private var openWindow
 
+    private var listHeight: CGFloat {
+        min(CGFloat(model.configs.count) * 76 + 24, 360)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             if model.configs.isEmpty {
@@ -13,20 +17,22 @@ struct MenuBarView: View {
                     .frame(maxWidth: .infinity, minHeight: 96)
             } else {
                 ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 10) {
+                    VStack(alignment: .leading, spacing: 10) {
                         ForEach(model.configs) { config in
                             CommandRowView(model: model, config: config)
                         }
                     }
                     .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                .frame(height: listHeight)
             }
 
             Divider()
 
             HStack(spacing: 12) {
                 Button {
-                    model.pendingEdit = CommandConfig(id: UUID(), name: "", command: "")
+                    model.presentEditor(CommandConfig(id: UUID(), name: "", command: ""))
                 } label: {
                     Label("添加命令", systemImage: "plus")
                 }
@@ -44,11 +50,10 @@ struct MenuBarView: View {
         }
         .frame(width: 420)
         .disabled(model.isQuitting)
-        .sheet(item: $model.pendingEdit) { draft in
-            CommandEditSheet(model: model, draft: draft)
-        }
         .onAppear {
             model.openLogWindow = { openWindow(id: "command-log", value: $0) }
+            model.openEditWindow = { openWindow(id: "command-edit", value: $0) }
+            try? model.applyExternalReload()
             Task { await model.presentLoadErrorIfNeeded() }
         }
     }
