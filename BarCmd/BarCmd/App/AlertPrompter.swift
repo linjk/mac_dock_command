@@ -48,6 +48,13 @@ final class AlertPrompter: UserPrompter {
         )
     }
 
+    func confirmLoginItem() async -> Bool {
+        await confirm(
+            message: "登录 Mac 时启动 BarCmd？",
+            action: "启动"
+        )
+    }
+
     func alert(title: String, message: String) async {
         await MainActor.run {
             let alert = NSAlert()

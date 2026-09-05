@@ -88,7 +88,9 @@ final class FakePrompter: UserPrompter {
     var confirmDeleteResult = true
     var confirmQuitResult = true
     var confirmReloadResult = true
+    var confirmLoginItemResult = true
     private(set) var confirmReloadCallCount = 0
+    private(set) var confirmLoginItemCallCount = 0
     private(set) var alerts: [(title: String, message: String)] = []
 
     func confirmStopForEdit(name: String) async -> Bool { confirmStopForEditResult }
@@ -99,9 +101,30 @@ final class FakePrompter: UserPrompter {
         confirmReloadCallCount += 1
         return confirmReloadResult
     }
+    func confirmLoginItem() async -> Bool {
+        confirmLoginItemCallCount += 1
+        return confirmLoginItemResult
+    }
     func alert(title: String, message: String) async {
         alerts.append((title, message))
     }
+}
+
+final class FakeLoginItem: LoginItemControlling {
+    var isEnabled = false
+    var requiresApproval = false
+    var setEnabledError: Error?
+    private(set) var setEnabledCalls: [Bool] = []
+
+    func setEnabled(_ enabled: Bool) throws {
+        setEnabledCalls.append(enabled)
+        if let setEnabledError { throw setEnabledError }
+        isEnabled = enabled
+    }
+}
+
+final class FakeLoginPromptStore: LoginItemPromptStore {
+    var prompted = false
 }
 
 final class FailingSaveStore: ConfigStore {

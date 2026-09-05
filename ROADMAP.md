@@ -2,7 +2,7 @@
 
 ## 当前阶段
 
-Task 12：自动化测试已通过；README 已补。手动清单未全部手测，**不能**把阶段标成「MVP 已实现」。
+发布脚本 + App 登录自启。命令仍手动启停。手动清单未全部手测，**不能**把阶段标成「MVP 已实现」。
 
 ## 已完成
 
@@ -24,6 +24,8 @@ Task 12：自动化测试已通过；README 已补。手动清单未全部手测
 - Task 10：`LsofCommand` / `RealLsofClient` + AppModel 每 2s 进程组 lsof；`LsofClientTests` 3 例通过。空 pid 不 spawn；非 0 退出当本轮 `[]`。日志行经 `PortDetector.merge` 更新端口，不再用裸 `ingestLogLine` 覆盖 lsof 结果。未手测 `npx` 外壳子进程端口
 - Task 11：目录 + 文件 `DispatchSource` 监听 YAML；`save`/`load`/`startWatching` 对齐 `lastWrittenHash`，哈希相同不回调；外部改写 debounce 300ms 后 `confirmReload` → `applyExternalReload`（`isQuitting` 忽略；reload 失败 alert）。`applicationShouldTerminate`：无运行中 `terminateNow`，否则 `confirmQuitSync`，取消 `terminateCancel`，确认则 `isQuitting` + `terminateLater` + `stopAll`。未手测外部改 yaml / Cmd+Q
 - Task 12：全量 `xcodebuild … test` 通过；README 写明 Xcode 打开工程、配置路径、最短添加命令步骤。手动 dsh / nvm / 退出杀进程 / 运行中先停 见「待办」与「最近验证」
+- App 登录自启：`SMAppService` + 底栏「登录时启动」+ 首次确认；命令仍无 autoStart
+- `scripts/release.sh`：根目录 `VERSION` 为当前版本；不传参补丁 +1 并写回 `VERSION` / Info.plist；打 Release zip；`--install` 覆盖 `/Applications`（未在本机跑过）
 
 ## 进行中
 
@@ -31,6 +33,7 @@ Task 12：自动化测试已通过；README 已补。手动清单未全部手测
 
 ## 待办
 
+- 手动验证（待确认）：`./scripts/release.sh --install` 后 `/Applications/BarCmd.app` 可开；底栏「登录时启动」与首次确认；覆盖安装后 YAML 仍在。Debug 包登录项不可靠
 - 手动验证（待确认）：打开菜单栏应同时看到 echo-test 与 DSH（打开 Extra 会 `applyExternalReload`，列表按行数定高；无 Accessibility，未手点）
 - 手动验证（待确认）：再次打开编辑窗口后，点 Name / Command 输入框，窗口应保持打开并可输入（已从 Extra `.sheet` 改为独立 `WindowGroup`；无 Accessibility，未手点）
 - 手动验证（待确认）：`npx @deepseek-ai/dsh web` 启停与 `:port`、nvm/conda 命令里能找到二进制、有 running 时退出杀进程组、运行中点编辑/删除必须先停、菜单栏 glyph 肉眼确认
@@ -42,6 +45,8 @@ Task 12：自动化测试已通过；README 已补。手动清单未全部手测
 
 ## 最近验证
 
+- 2026-09-05：当前版本改记仓库根目录 `VERSION`（`0.1.0`）。`release.sh` 默认从该文件补丁 +1，写回 `VERSION` 与 Info.plist；两处不一致则失败。`bash -n scripts/release.sh` 通过。未跑完整打包。
+- 2026-09-05：App 登录自启（`SMAppService` + 底栏开关 + 首次确认）与 `scripts/release.sh`（Info.plist 升版、Release zip、`--install`）。`AppModelTests` 新增 4 例登录项；`bash -n scripts/release.sh` 通过。全量 `xcodebuild … test` → **TEST SUCCEEDED**（Executed 65 tests, 0 failures）。未跑 `--install`。
 - 2026-09-05：已重启 21:28 Debug 包仍看不到 DSH。YAML / `.bak` 均有 echo-test + DSH。Extra 里无高度的 `ScrollView` 会裁第二条；打开时也不从磁盘对齐。改为按行数定高 + `onAppear` 调 `applyExternalReload`，模型只挂 `AppDelegate`。新增 `testApplyExternalReloadPicksUpCommandWrittenToDisk`。全量 `xcodebuild … test` → **TEST SUCCEEDED**（Executed 61 tests, 0 failures）。手点菜单栏 **待确认**
 - 2026-09-05：添加命令后 YAML 有 DSH，列表不刷新。根因是编辑独立窗口拆掉 Extra 后，`MenuBarExtra` 复用旧 body，不重读 `configs`。`BarCmdApp.body` 直接读命令 ID，Extra 内容 `.id` 绑到该列表。磁盘 `commands.yaml` 已含 echo-test + DSH。全量 `xcodebuild … test` → **TEST SUCCEEDED**（Executed 60 tests, 0 failures）。手点菜单栏 **待确认**
 - 2026-09-05：编辑表单再点输入即关。根因是 `.sheet` 挂在 `MenuBarExtra` 上，点表单等于点 Extra 外，Popover 拆除。改为 `WindowGroup(id: "command-edit")` + `presentEditor` / `dismissEditor`。`AppModelTests` 20/0；全量 `xcodebuild … test` → **TEST SUCCEEDED**（Executed 60 tests, 0 failures）。手点输入框 **待确认**

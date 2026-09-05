@@ -13,7 +13,7 @@ macOS 菜单栏命令运行器。用菜单栏管理长期运行的 shell 命令�
 
 ## 范围
 
-只做规格里的 MVP。禁止顺手加：登录自启、autoStart、日志搜索、分组、多实例、设置页、Dock 图标、App Sandbox、iCloud。
+只做规格里的范围。禁止顺手加：命令 autoStart、日志搜索、分组、多实例、设置页、Dock 图标、App Sandbox、iCloud。App 登录自启（`SMAppService` + 底栏开关）按规格做。
 
 ## 工程约定
 

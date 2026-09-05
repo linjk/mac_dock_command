@@ -36,6 +36,8 @@ struct MenuBarView: View {
                 } label: {
                     Label("添加命令", systemImage: "plus")
                 }
+                Toggle("登录时启动", isOn: loginItemBinding)
+                    .toggleStyle(.checkbox)
                 Button {
                     model.revealConfig()
                 } label: {
@@ -54,7 +56,19 @@ struct MenuBarView: View {
             model.openLogWindow = { openWindow(id: "command-log", value: $0) }
             model.openEditWindow = { openWindow(id: "command-edit", value: $0) }
             try? model.applyExternalReload()
-            Task { await model.presentLoadErrorIfNeeded() }
+            Task {
+                await model.presentLoadErrorIfNeeded()
+                await model.presentLoginItemPromptIfNeeded()
+            }
         }
+    }
+
+    private var loginItemBinding: Binding<Bool> {
+        Binding(
+            get: { model.loginItemEnabled },
+            set: { value in
+                Task { await model.setLoginItemEnabled(value) }
+            }
+        )
     }
 }

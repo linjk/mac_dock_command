@@ -20,6 +20,7 @@
 | 沙盒 | 关闭。任意 cwd、任意 shell、`lsof` 都需要 |
 | 形态 | Agent：`LSUIElement = true`，`activationPolicy = .accessory`，无 Dock 图标 |
 | 配置 | `~/Library/Application Support/BarCmd/commands.yaml` |
+| 版本 | 仓库根目录 `VERSION` 为唯一记录；`scripts/release.sh` 默认补丁 +1，写回 `VERSION` 与 `Info.plist`（`CFBundleVersion` 每次 +1） |
 
 全局约束（实现计划中每项任务默认包含）：非沙盒、无 Dock、退出前停光进程、运行中不可直接编辑/删除、菜单栏图标必须是 template。
 
@@ -28,6 +29,7 @@
 ```
 mac_dock_command/
 ├── CLAUDE.md
+├── VERSION
 ├── ROADMAP.md
 ├── README.md
 ├── BarCmd/
@@ -42,6 +44,7 @@ mac_dock_command/
 │   │   │   ├── CommandRuntime.swift
 │   │   │   └── CommandStatus.swift
 │   │   ├── Services/
+│   │   │   ├── LoginItem.swift            # SMAppService 登录项
 │   │   │   ├── ProcessManager.swift
 │   │   │   ├── ProcessSpawner.swift       # 新进程组 + shell 包装
 │   │   │   ├── ProcessTree.swift          # pgid / 子树 PID
@@ -66,6 +69,8 @@ mac_dock_command/
 │       ├── ANSIStripperTests.swift
 │       ├── PathExpandTests.swift
 │       └── ProcessManagerTests.swift
+├── scripts/
+│   └── release.sh
 └── docs/
 ```
 
@@ -335,7 +340,7 @@ YAML 字段：`id`（UUID 字符串）、`name`、`command`、`cwd`（省略则 
 
 | 文件 | 职责 |
 |------|------|
-| `MenuBarView` | 列表、底栏（添加 / 打开配置 / 退出）、空状态「还没有命令」 |
+| `MenuBarView` | 列表、底栏（添加 / 登录时启动 / 打开配置 / 退出）、空状态「还没有命令」 |
 | `CommandRowView` | 状态点、名称、按钮、副行、PID/port |
 | `CommandEditSheet` | 添加与编辑共用（独立窗口，不挂 Extra） |
 | `LogWindowView` | 等宽、深色、自动滚底；复制全部、清屏；PID/port/时长 |
@@ -402,6 +407,15 @@ Popover 宽度约 420pt。列表按行数给明确高度（单行约 76pt，最�
 颜色：底 `#243447`，括号 `#F2F2F7`，三角 `#30D158`。菜单栏 glyph 只有黑+透明，无 squircle 底。
 
 `MenuBarExtra` 的 `label` 用 `Image("MenuBarIcon")`，不要 SF Symbol。
+
+登录自启（App 级，不是命令 `autoStart`）：
+
+- `LoginItemControlling`：`isEnabled` / `requiresApproval` / `setEnabled(_:)`
+- 实现：`SMAppService.mainApp.register()` / `unregister()`；`isEnabled` 看 `status == .enabled`
+- `UserDefaults` 键 `loginItemPrompted`：首次 Extra 出现问一次「登录 Mac 时启动 BarCmd？」
+- `requiresApproval` 时 `prompter.alert`「请在系统设置 → 通用 → 登录项中允许 BarCmd」
+- 登录项跟 Bundle ID `com.dorian.barcmd`；覆盖 `/Applications/BarCmd.app` 不必重注册
+- Debug / DerivedData 里的包登录项不可靠，以 `/Applications` 的 Release 为准
 
 `MenuBarExtra` 关掉后不会因为 `configs` 变了而重算 body（编辑独立窗口会拆掉 Extra）。`BarCmdApp.body` 必须直接读 `model.configs`，并把 Extra 内容 `.id` 绑到命令 ID 列表，否则保存成功、YAML 有了，列表仍是旧的。
 

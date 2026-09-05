@@ -6,5 +6,6 @@ protocol UserPrompter: AnyObject {
     func confirmDelete(name: String) async -> Bool
     func confirmQuit(runningCount: Int) async -> Bool
     func confirmReload() async -> Bool
+    func confirmLoginItem() async -> Bool
     func alert(title: String, message: String) async
 }

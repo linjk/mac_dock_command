@@ -10,6 +10,7 @@ final class AppModel {
     var isQuitting = false
     private(set) var loadError: String?
     var pendingEdit: CommandConfig?
+    var loginItemEnabled: Bool
 
     var runningCount: Int {
         runtimes.values.filter { $0.status == .running || $0.status == .starting }.count
@@ -25,6 +26,8 @@ final class AppModel {
     private let store: ConfigStore
     private let processes: ProcessControlling
     private let prompter: UserPrompter
+    private let loginItem: LoginItemControlling
+    private let promptStore: LoginItemPromptStore
     private var stoppingIDs: Set<UUID> = []
     private var portTrackers: [UUID: PortTracker] = [:]
     private var portPollTasks: [UUID: Task<Void, Never>] = [:]
@@ -38,7 +41,9 @@ final class AppModel {
         prompter: UserPrompter,
         openLogWindow: @escaping (UUID) -> Void = { _ in },
         openEditWindow: @escaping (UUID) -> Void = { _ in },
-        lsof: LsofClient = RealLsofClient()
+        lsof: LsofClient = RealLsofClient(),
+        loginItem: LoginItemControlling = SMAppServiceLoginItem(),
+        promptStore: LoginItemPromptStore = UserDefaultsLoginPromptStore()
     ) {
         self.store = store
         self.processes = processes
@@ -47,6 +52,9 @@ final class AppModel {
         self.openLogWindow = openLogWindow
         self.openEditWindow = openEditWindow
         self.lsof = lsof
+        self.loginItem = loginItem
+        self.promptStore = promptStore
+        self.loginItemEnabled = loginItem.isEnabled
         do {
             configs = try store.load()
         } catch {
@@ -60,6 +68,29 @@ final class AppModel {
 
     func runtime(_ id: UUID) -> CommandRuntime {
         runtimes[id] ?? CommandRuntime()
+    }
+
+    func setLoginItemEnabled(_ enabled: Bool) async {
+        do {
+            try loginItem.setEnabled(enabled)
+        } catch {
+            await prompter.alert(title: "登录项失败", message: error.localizedDescription)
+        }
+        loginItemEnabled = loginItem.isEnabled
+        if loginItem.requiresApproval {
+            await prompter.alert(
+                title: "需要系统批准",
+                message: "请在系统设置 → 通用 → 登录项中允许 BarCmd。"
+            )
+        }
+    }
+
+    func presentLoginItemPromptIfNeeded() async {
+        guard !promptStore.prompted else { return }
+        promptStore.prompted = true
+        if await prompter.confirmLoginItem() {
+            await setLoginItemEnabled(true)
+        }
     }
 
     func presentLoadErrorIfNeeded() async {

@@ -354,10 +354,79 @@ final class AppModelTests: XCTestCase {
         XCTAssertEqual(model.runtime(id).port, 5173)
     }
 
+    func testSetLoginItemEnabledRegisters() async throws {
+        let loginItem = FakeLoginItem()
+        let (model, _, _, _, _) = try makeHarness(configs: [], loginItem: loginItem)
+        XCTAssertFalse(model.loginItemEnabled)
+
+        await model.setLoginItemEnabled(true)
+
+        XCTAssertEqual(loginItem.setEnabledCalls, [true])
+        XCTAssertTrue(model.loginItemEnabled)
+    }
+
+    func testSetLoginItemEnabledRequiresApprovalAlerts() async throws {
+        let loginItem = FakeLoginItem()
+        loginItem.requiresApproval = true
+        let prompter = FakePrompter()
+        let (model, _, _, _, _) = try makeHarness(
+            configs: [],
+            prompter: prompter,
+            loginItem: loginItem
+        )
+
+        await model.setLoginItemEnabled(true)
+
+        XCTAssertEqual(prompter.alerts.first?.title, "需要系统批准")
+        XCTAssertTrue(prompter.alerts.first?.message.contains("登录项") == true)
+    }
+
+    func testPresentLoginItemPromptRegistersOnce() async throws {
+        let loginItem = FakeLoginItem()
+        let promptStore = FakeLoginPromptStore()
+        let prompter = FakePrompter()
+        prompter.confirmLoginItemResult = true
+        let (model, _, _, _, _) = try makeHarness(
+            configs: [],
+            prompter: prompter,
+            loginItem: loginItem,
+            promptStore: promptStore
+        )
+
+        await model.presentLoginItemPromptIfNeeded()
+        await model.presentLoginItemPromptIfNeeded()
+
+        XCTAssertEqual(prompter.confirmLoginItemCallCount, 1)
+        XCTAssertTrue(promptStore.prompted)
+        XCTAssertEqual(loginItem.setEnabledCalls, [true])
+        XCTAssertTrue(model.loginItemEnabled)
+    }
+
+    func testPresentLoginItemPromptDeclineDoesNotRegister() async throws {
+        let loginItem = FakeLoginItem()
+        let promptStore = FakeLoginPromptStore()
+        let prompter = FakePrompter()
+        prompter.confirmLoginItemResult = false
+        let (model, _, _, _, _) = try makeHarness(
+            configs: [],
+            prompter: prompter,
+            loginItem: loginItem,
+            promptStore: promptStore
+        )
+
+        await model.presentLoginItemPromptIfNeeded()
+
+        XCTAssertTrue(promptStore.prompted)
+        XCTAssertTrue(loginItem.setEnabledCalls.isEmpty)
+        XCTAssertFalse(model.loginItemEnabled)
+    }
+
     private func makeHarness(
         configs: [CommandConfig],
         prompter: FakePrompter = FakePrompter(),
-        lsof: LsofClient = FakeLsofClient()
+        lsof: LsofClient = FakeLsofClient(),
+        loginItem: LoginItemControlling = FakeLoginItem(),
+        promptStore: LoginItemPromptStore = FakeLoginPromptStore()
     ) throws -> (AppModel, ConfigStore, FakeProcess, LogBufferStore, FakePrompter) {
         let dir = FileManager.default.temporaryDirectory
             .appendingPathComponent("barcmd-appmodel-\(UUID().uuidString)", isDirectory: true)
@@ -372,7 +441,9 @@ final class AppModelTests: XCTestCase {
             processes: processes,
             logs: logs,
             prompter: prompter,
-            lsof: lsof
+            lsof: lsof,
+            loginItem: loginItem,
+            promptStore: promptStore
         )
         return (model, store, processes, logs, prompter)
     }
