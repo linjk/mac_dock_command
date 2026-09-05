@@ -7,7 +7,7 @@ import Observation
 final class AppModel {
     private(set) var configs: [CommandConfig] = []
     private(set) var runtimes: [UUID: CommandRuntime] = [:]
-    private(set) var isQuitting = false
+    var isQuitting = false
     private(set) var loadError: String?
     var pendingEdit: CommandConfig?
 
@@ -197,6 +197,17 @@ final class AppModel {
 
     func requestQuit() {
         NSApp.terminate(nil)
+    }
+
+    func beginWatching() {
+        store.startWatching { [weak self] in
+            Task {
+                guard let self else { return }
+                if await self.prompter.confirmReload() {
+                    try self.applyExternalReload()
+                }
+            }
+        }
     }
 
     func applyExternalReload() throws {

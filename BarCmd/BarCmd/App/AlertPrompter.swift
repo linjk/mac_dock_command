@@ -33,6 +33,14 @@ final class AlertPrompter: UserPrompter {
         )
     }
 
+    func confirmQuitSync(runningCount: Int) -> Bool {
+        let alert = NSAlert()
+        alert.messageText = "有 \(runningCount) 条命令正在运行，退出将停止它们。"
+        alert.addButton(withTitle: "退出并停止")
+        alert.addButton(withTitle: "取消")
+        return alert.runModal() == .alertFirstButtonReturn
+    }
+
     func confirmReload() async -> Bool {
         await confirm(
             message: "配置已更新，是否重载？",

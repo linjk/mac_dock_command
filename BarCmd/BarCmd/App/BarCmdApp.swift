@@ -15,6 +15,7 @@ struct BarCmdApp: App {
             prompter: AlertPrompter()
         )
         _model = State(initialValue: model)
+        appDelegate.model = model
     }
 
     var body: some Scene {
