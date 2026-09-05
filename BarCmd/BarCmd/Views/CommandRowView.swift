@@ -4,7 +4,6 @@ import SwiftUI
 struct CommandRowView: View {
     let model: AppModel
     let config: CommandConfig
-    var onEdit: (CommandConfig) -> Void
 
     private var runtime: CommandRuntime {
         model.runtime(config.id)
@@ -88,13 +87,7 @@ struct CommandRowView: View {
             .help("日志")
 
             Button {
-                Task {
-                    if await model.requestEdit(config.id) {
-                        if let latest = model.configs.first(where: { $0.id == config.id }) {
-                            onEdit(latest)
-                        }
-                    }
-                }
+                Task { _ = await model.requestEdit(config.id) }
             } label: {
                 Image(systemName: "pencil")
             }

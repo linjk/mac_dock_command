@@ -9,6 +9,7 @@ final class AppModel {
     private(set) var runtimes: [UUID: CommandRuntime] = [:]
     private(set) var isQuitting = false
     private(set) var loadError: String?
+    var pendingEdit: CommandConfig?
 
     var runningCount: Int {
         runtimes.values.filter { $0.status == .running || $0.status == .starting }.count
@@ -159,6 +160,7 @@ final class AppModel {
             guard await prompter.confirmStopForEdit(name: name) else { return false }
             await stop(id)
         }
+        pendingEdit = configs.first(where: { $0.id == id })
         return true
     }
 

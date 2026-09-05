@@ -2,8 +2,7 @@ import AppKit
 import SwiftUI
 
 struct MenuBarView: View {
-    let model: AppModel
-    @State private var editing: CommandConfig?
+    @Bindable var model: AppModel
 
     var body: some View {
         VStack(spacing: 0) {
@@ -15,9 +14,7 @@ struct MenuBarView: View {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 10) {
                         ForEach(model.configs) { config in
-                            CommandRowView(model: model, config: config) { draft in
-                                editing = draft
-                            }
+                            CommandRowView(model: model, config: config)
                         }
                     }
                     .padding(12)
@@ -28,7 +25,7 @@ struct MenuBarView: View {
 
             HStack(spacing: 12) {
                 Button {
-                    editing = CommandConfig(id: UUID(), name: "", command: "")
+                    model.pendingEdit = CommandConfig(id: UUID(), name: "", command: "")
                 } label: {
                     Label("添加命令", systemImage: "plus")
                 }
@@ -46,7 +43,7 @@ struct MenuBarView: View {
         }
         .frame(width: 420)
         .disabled(model.isQuitting)
-        .sheet(item: $editing) { draft in
+        .sheet(item: $model.pendingEdit) { draft in
             CommandEditSheet(model: model, draft: draft)
         }
         .onAppear {

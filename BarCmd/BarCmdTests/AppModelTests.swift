@@ -94,6 +94,7 @@ final class AppModelTests: XCTestCase {
         await model.start(id)
         let opened = await model.requestEdit(id)
         XCTAssertFalse(opened)
+        XCTAssertNil(model.pendingEdit)
         XCTAssertEqual(model.runtime(id).status, .running)
         XCTAssertTrue(processes.stoppedIDs.isEmpty)
     }
@@ -107,6 +108,7 @@ final class AppModelTests: XCTestCase {
         await model.start(id)
         let opened = await model.requestEdit(id)
         XCTAssertTrue(opened)
+        XCTAssertEqual(model.pendingEdit?.id, id)
         XCTAssertEqual(processes.stoppedIDs, [id])
         await waitUntil { model.runtime(id).status == .stopped }
         XCTAssertEqual(model.runtime(id).status, .stopped)

@@ -36,6 +36,7 @@ Task 8 已完成：Popover 列表、编辑 Sheet、NSAlert Prompter。下一步 
 
 ## 最近验证
 
+- 2026-09-05：`pendingEdit` 收到 `AppModel` 后 `AppModelTests` 10/0、全量 42/0，`** TEST SUCCEEDED **`
 - 2026-09-05：`xcodebuild -project BarCmd/BarCmd.xcodeproj -scheme BarCmd -destination 'platform=macOS' build` → `** BUILD SUCCEEDED **`（Task 8 Popover / Sheet / AlertPrompter）
 - 2026-09-05：`xcodebuild -project BarCmd/BarCmd.xcodeproj -scheme BarCmd -destination 'platform=macOS' test` → `** TEST SUCCEEDED **`（Executed 42 tests, 0 failures）
 - 2026-09-05：`xcodebuild -project BarCmd/BarCmd.xcodeproj -scheme BarCmd -destination 'platform=macOS' test -only-testing:BarCmdTests/AppModelTests` → RED（`AppModel`/`UserPrompter` 找不到）后 GREEN（10 tests, 0 failures）
