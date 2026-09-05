@@ -2,7 +2,7 @@
 
 ## 当前阶段
 
-Task 11 已完成：FSEvents 与退出协商。下一步 Task 12。
+Task 12：自动化测试已通过；README 已补。手动清单未全部手测，**不能**把阶段标成「MVP 已实现」。
 
 ## 已完成
 
@@ -23,6 +23,7 @@ Task 11 已完成：FSEvents 与退出协商。下一步 Task 12。
 - Task 9：`LogWindowView` + `WindowGroup(id: "command-log")`；📋 经 `openWindow` 打开；关窗不停进程。未手测 `echo line1; echo line2; sleep 5`
 - Task 10：`LsofCommand` / `RealLsofClient` + AppModel 每 2s 进程组 lsof；`LsofClientTests` 3 例通过。空 pid 不 spawn；非 0 退出当本轮 `[]`。日志行经 `PortDetector.merge` 更新端口，不再用裸 `ingestLogLine` 覆盖 lsof 结果。未手测 `npx` 外壳子进程端口
 - Task 11：目录 + 文件 `DispatchSource` 监听 YAML；`save`/`load`/`startWatching` 对齐 `lastWrittenHash`，哈希相同不回调；外部改写 debounce 300ms 后 `confirmReload` → `applyExternalReload`（`isQuitting` 忽略；reload 失败 alert）。`applicationShouldTerminate`：无运行中 `terminateNow`，否则 `confirmQuitSync`，取消 `terminateCancel`，确认则 `isQuitting` + `terminateLater` + `stopAll`。未手测外部改 yaml / Cmd+Q
+- Task 12：全量 `xcodebuild … test` 通过；README 写明 Xcode 打开工程、配置路径、最短添加命令步骤。手动 dsh / nvm / 退出杀进程 / 运行中先停 见「待办」与「最近验证」
 
 ## 进行中
 
@@ -30,15 +31,23 @@ Task 11 已完成：FSEvents 与退出协商。下一步 Task 12。
 
 ## 待办
 
-- 按 plan 实现 MVP（Task 12）
-- 手动验证：`npx @deepseek-ai/dsh web`、nvm/conda、YAML 外部重载、退出杀进程
+- 手动验证（待确认）：`npx @deepseek-ai/dsh web` 启停与 `:port`、nvm/conda 命令里能找到二进制、有 running 时退出杀进程组、运行中点编辑/删除必须先停、菜单栏 glyph 肉眼确认
+- 手动验证（部分）：外部改 YAML 会弹出重载确认框（本机已见到 260×176 对话框；未点「重载」，列表是否更新未确认）
 
 ## 阻塞
 
-无
+无 Accessibility 权限，无法用脚本点菜单栏 extra / 对话框按钮。本机有 iBar Pro，菜单栏 extra 可能被收纳，截图未辨认出 `[▶]`。
 
 ## 最近验证
 
+- 2026-09-02：Task 12 全量 `xcodebuild -project BarCmd/BarCmd.xcodeproj -scheme BarCmd -destination 'platform=macOS' test` → **TEST SUCCEEDED**（Executed 53 tests, 0 failures）
+- 2026-09-02：启动 Debug `BarCmd.app`（pid 曾为 44478）。Dock 常规应用列表无 BarCmd；进程 `background only`。`LSUIElement` + `setActivationPolicy(.accessory)` 与此一致
+- 2026-09-02：外部改写 `~/Library/Application Support/BarCmd/commands.yaml` 后，BarCmd 弹出约 260×176 窗口（重载确认）。未点「重载」，列表是否更新 **待确认**
+- 2026-09-02：`npx @deepseek-ai/dsh web` 经 App 启动、日志 URL、`:port` 开浏览器、停止后进程与端口消失 — **待确认**（无辅助功能，无法点启动；未在 App 内跑 dsh）
+- 2026-09-02：当前 conda/nvm 环境里 `node -v` / `which npx` 经 BarCmd 命令能找到二进制 — **待确认**（本机 login shell 有 nvm node v24.14.0 与 npx；未在 App 命令里跑）
+- 2026-09-02：有 running 时退出 App，进程组消失 — **待确认**（未启动长期命令再退）
+- 2026-09-02：运行中点编辑/删除必须先停 — **待确认**（仅有单测，未手点）
+- 2026-09-02：菜单栏 template `[▶]` 肉眼确认 — **待确认**（资源 `template-rendering-intent` 已设；截图未辨认出 glyph，可能被 iBar Pro 收纳）
 - 2026-09-05：Task 11 review：`load`/`startWatching` 对齐 `lastWrittenHash`；`beginWatching` 忽略 `isQuitting` 并 catch reload 错误。`ConfigWatchTests` 4/0、`AppModelTests` 14/0；全量 `xcodebuild … test` → **TEST SUCCEEDED**（Executed 53 tests, 0 failures）
 - 2026-09-05：Task 11 `ConfigWatchTests` RED（`startWatching` 找不到）后 GREEN（2 tests, 0 failures）；全量 `xcodebuild … test` → **TEST SUCCEEDED**（Executed 49 tests, 0 failures）
 - 2026-09-05：Task 10 review：`handleOutput` 改为 `PortDetector.merge`；`AppModelTests` RED（无端口日志行把 5173 清成 nil）后 GREEN（12 tests, 0 failures）；全量 `xcodebuild … test` → **TEST SUCCEEDED**（Executed 47 tests, 0 failures）
