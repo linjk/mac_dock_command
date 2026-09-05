@@ -25,5 +25,12 @@ struct BarCmdApp: App {
             Image("MenuBarIcon")
         }
         .menuBarExtraStyle(.window)
+
+        WindowGroup(id: "command-log", for: UUID.self) { $id in
+            if let id {
+                LogWindowView(commandID: id, model: model)
+            }
+        }
+        .defaultSize(width: 720, height: 480)
     }
 }

@@ -3,6 +3,7 @@ import SwiftUI
 
 struct MenuBarView: View {
     @Bindable var model: AppModel
+    @Environment(\.openWindow) private var openWindow
 
     var body: some View {
         VStack(spacing: 0) {
@@ -47,6 +48,7 @@ struct MenuBarView: View {
             CommandEditSheet(model: model, draft: draft)
         }
         .onAppear {
+            model.openLogWindow = { openWindow(id: "command-log", value: $0) }
             Task { await model.presentLoadErrorIfNeeded() }
         }
     }

@@ -17,9 +17,10 @@ final class AppModel {
 
     var openLogWindow: (UUID) -> Void
 
+    let logs: LogBufferStore
+
     private let store: ConfigStore
     private let processes: ProcessControlling
-    private let logs: LogBufferStore
     private let prompter: UserPrompter
     private var stoppingIDs: Set<UUID> = []
     private var portTrackers: [UUID: PortTracker] = [:]

@@ -2,7 +2,7 @@
 
 ## 当前阶段
 
-Task 8 已完成：Popover 列表、编辑 Sheet、NSAlert Prompter。下一步 Task 9（独立日志窗口）。
+Task 9 已完成：独立日志窗口。下一步 Task 10（真 lsof 轮询）。
 
 ## 已完成
 
@@ -20,6 +20,7 @@ Task 8 已完成：Popover 列表、编辑 Sheet、NSAlert Prompter。下一步 
 - Task 6：`ProcessControlling` / `ProcessSpawner` / `ProcessTree` / `ProcessManager`；`ProcessSpawnerTests` 2 例 + `ProcessManagerTests` 2 例通过（zsh/bash source rc 与 export、echo 退出码 3、stdout+stderr、`sleep 30` 在 8s 内被杀掉）。未接 AppModel
 - Task 7：`UserPrompter` / `AppModel`；`AppModelTests` 10 例通过（启停状态机、cwd 缺失中文日志、编辑/删除闸门、外部 YAML 删掉运行中命令先挂起）。无 SwiftUI；`requestQuit` 仅 `NSApp.terminate(nil)`；lsof 轮询留给 Task 10
 - Task 8：`MenuBarView` / `CommandRowView` / `CommandEditSheet` / `AlertPrompter`；空 `AppDelegate` 仅 `.accessory`；`load()` 失败写 `loadError` 并试 `.bak`。无日志 WindowGroup（Task 9）；退出确认留给 Task 11
+- Task 9：`LogWindowView` + `WindowGroup(id: "command-log")`；📋 经 `openWindow` 打开；关窗不停进程。未手测 `echo line1; echo line2; sleep 5`
 
 ## 进行中
 
@@ -27,7 +28,7 @@ Task 8 已完成：Popover 列表、编辑 Sheet、NSAlert Prompter。下一步 
 
 ## 待办
 
-- 按 plan 实现 MVP（Task 9–12）
+- 按 plan 实现 MVP（Task 10–12）
 - 手动验证：`npx @deepseek-ai/dsh web`、nvm/conda、YAML 外部重载、退出杀进程
 
 ## 阻塞
@@ -36,6 +37,7 @@ Task 8 已完成：Popover 列表、编辑 Sheet、NSAlert Prompter。下一步 
 
 ## 最近验证
 
+- 2026-09-05：Task 9 `xcodebuild … test` → **TEST SUCCEEDED**（Executed 42 tests, 0 failures）；`xcodebuild … build` → **BUILD SUCCEEDED**
 - 2026-09-05：`pendingEdit` 收到 `AppModel` 后 `AppModelTests` 10/0、全量 42/0，`** TEST SUCCEEDED **`
 - 2026-09-05：`xcodebuild -project BarCmd/BarCmd.xcodeproj -scheme BarCmd -destination 'platform=macOS' build` → `** BUILD SUCCEEDED **`（Task 8 Popover / Sheet / AlertPrompter）
 - 2026-09-05：`xcodebuild -project BarCmd/BarCmd.xcodeproj -scheme BarCmd -destination 'platform=macOS' test` → `** TEST SUCCEEDED **`（Executed 42 tests, 0 failures）
