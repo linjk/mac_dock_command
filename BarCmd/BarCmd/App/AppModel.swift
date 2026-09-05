@@ -201,10 +201,15 @@ final class AppModel {
 
     func beginWatching() {
         store.startWatching { [weak self] in
-            Task {
-                guard let self else { return }
-                if await self.prompter.confirmReload() {
-                    try self.applyExternalReload()
+            Task { @MainActor in
+                guard let self, !self.isQuitting else { return }
+                do {
+                    if await self.prompter.confirmReload() {
+                        try self.applyExternalReload()
+                    }
+                } catch {
+                    self.loadError = error.localizedDescription
+                    await self.prompter.alert(title: "配置加载失败", message: error.localizedDescription)
                 }
             }
         }

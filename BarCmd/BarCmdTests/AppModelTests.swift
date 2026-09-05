@@ -164,6 +164,48 @@ final class AppModelTests: XCTestCase {
         XCTAssertEqual(model.runtime(id).port, 5173)
     }
 
+    func testBeginWatchingIgnoresExternalChangeWhileQuitting() async throws {
+        let id = UUID()
+        let config = CommandConfig(id: id, name: "web", command: "echo ok")
+        let prompter = FakePrompter()
+        let (model, store, _, _, _) = try makeHarness(configs: [config], prompter: prompter)
+        model.beginWatching()
+        model.isQuitting = true
+
+        let yaml = """
+        commands:
+          - id: "33333333-3333-3333-3333-333333333333"
+            name: "B"
+            command: "echo"
+        """
+        let handle = try FileHandle(forWritingTo: store.fileURL)
+        try handle.truncate(atOffset: 0)
+        try handle.write(contentsOf: Data(yaml.utf8))
+        try handle.close()
+
+        try await Task.sleep(nanoseconds: 1_000_000_000)
+        store.stopWatching()
+        XCTAssertEqual(prompter.confirmReloadCallCount, 0)
+    }
+
+    func testBeginWatchingReloadErrorAlerts() async throws {
+        let config = CommandConfig(id: UUID(), name: "web", command: "echo ok")
+        let prompter = FakePrompter()
+        let (model, store, _, _, _) = try makeHarness(configs: [config], prompter: prompter)
+        model.beginWatching()
+
+        try "::::".write(to: store.fileURL, atomically: true, encoding: .utf8)
+
+        let deadline = Date().addingTimeInterval(1.5)
+        while prompter.alerts.isEmpty, Date() < deadline {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        store.stopWatching()
+        XCTAssertFalse(prompter.alerts.isEmpty, "reload error should alert instead of dying in Task")
+        XCTAssertEqual(prompter.alerts.first?.title, "配置加载失败")
+        XCTAssertNotNil(model.loadError)
+    }
+
     func testLogLineWithoutPortDoesNotClearLsofMergedPort() async throws {
         let id = UUID()
         let config = CommandConfig(id: id, name: "web", command: "echo ok")

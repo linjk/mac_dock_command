@@ -22,7 +22,7 @@ Task 11 已完成：FSEvents 与退出协商。下一步 Task 12。
 - Task 8：`MenuBarView` / `CommandRowView` / `CommandEditSheet` / `AlertPrompter`；空 `AppDelegate` 仅 `.accessory`；`load()` 失败写 `loadError` 并试 `.bak`。无日志 WindowGroup（Task 9）；退出确认留给 Task 11
 - Task 9：`LogWindowView` + `WindowGroup(id: "command-log")`；📋 经 `openWindow` 打开；关窗不停进程。未手测 `echo line1; echo line2; sleep 5`
 - Task 10：`LsofCommand` / `RealLsofClient` + AppModel 每 2s 进程组 lsof；`LsofClientTests` 3 例通过。空 pid 不 spawn；非 0 退出当本轮 `[]`。日志行经 `PortDetector.merge` 更新端口，不再用裸 `ingestLogLine` 覆盖 lsof 结果。未手测 `npx` 外壳子进程端口
-- Task 11：目录 + 文件 `DispatchSource` 监听 YAML；`save` 哈希相同不回调；外部改写 debounce 300ms 后 `confirmReload` → `applyExternalReload`。`applicationShouldTerminate`：无运行中 `terminateNow`，否则 `confirmQuitSync`，取消 `terminateCancel`，确认则 `isQuitting` + `terminateLater` + `stopAll`。未手测外部改 yaml / Cmd+Q
+- Task 11：目录 + 文件 `DispatchSource` 监听 YAML；`save`/`load`/`startWatching` 对齐 `lastWrittenHash`，哈希相同不回调；外部改写 debounce 300ms 后 `confirmReload` → `applyExternalReload`（`isQuitting` 忽略；reload 失败 alert）。`applicationShouldTerminate`：无运行中 `terminateNow`，否则 `confirmQuitSync`，取消 `terminateCancel`，确认则 `isQuitting` + `terminateLater` + `stopAll`。未手测外部改 yaml / Cmd+Q
 
 ## 进行中
 
@@ -39,6 +39,7 @@ Task 11 已完成：FSEvents 与退出协商。下一步 Task 12。
 
 ## 最近验证
 
+- 2026-09-05：Task 11 review：`load`/`startWatching` 对齐 `lastWrittenHash`；`beginWatching` 忽略 `isQuitting` 并 catch reload 错误。`ConfigWatchTests` 4/0、`AppModelTests` 14/0；全量 `xcodebuild … test` → **TEST SUCCEEDED**（Executed 53 tests, 0 failures）
 - 2026-09-05：Task 11 `ConfigWatchTests` RED（`startWatching` 找不到）后 GREEN（2 tests, 0 failures）；全量 `xcodebuild … test` → **TEST SUCCEEDED**（Executed 49 tests, 0 failures）
 - 2026-09-05：Task 10 review：`handleOutput` 改为 `PortDetector.merge`；`AppModelTests` RED（无端口日志行把 5173 清成 nil）后 GREEN（12 tests, 0 failures）；全量 `xcodebuild … test` → **TEST SUCCEEDED**（Executed 47 tests, 0 failures）
 - 2026-09-05：Task 10 `xcodebuild … test -only-testing:BarCmdTests/LsofClientTests` → RED（`LsofCommand`/`RealLsofClient` 找不到）后 GREEN（3 tests, 0 failures）；与 AppModelTests 合计 13/0；全量 `xcodebuild … test` → **TEST SUCCEEDED**（Executed 45 tests, 0 failures）

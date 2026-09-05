@@ -49,6 +49,7 @@ final class ConfigStore {
         let text = try String(contentsOf: fileURL, encoding: .utf8)
         do {
             let file = try YAMLDecoder().decode(CommandsFile.self, from: text)
+            lastWrittenHash = try currentFileHash()
             return file.commands
         } catch {
             let line = (error as? YamlError).flatMap { _ in nil as Int? }
@@ -92,6 +93,9 @@ final class ConfigStore {
         self.onExternalChange = onExternalChange
 
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        if FileManager.default.fileExists(atPath: fileURL.path) {
+            lastWrittenHash = (try? currentFileHash()) ?? lastWrittenHash
+        }
         watchSource = makeFileSystemSource(
             path: directory.path,
             eventMask: [.write, .rename, .delete]

@@ -84,11 +84,18 @@ final class FakePrompter: UserPrompter {
     var confirmDeleteResult = true
     var confirmQuitResult = true
     var confirmReloadResult = true
+    private(set) var confirmReloadCallCount = 0
+    private(set) var alerts: [(title: String, message: String)] = []
 
     func confirmStopForEdit(name: String) async -> Bool { confirmStopForEditResult }
     func confirmStopForDelete(name: String) async -> Bool { confirmStopForDeleteResult }
     func confirmDelete(name: String) async -> Bool { confirmDeleteResult }
     func confirmQuit(runningCount: Int) async -> Bool { confirmQuitResult }
-    func confirmReload() async -> Bool { confirmReloadResult }
-    func alert(title: String, message: String) async {}
+    func confirmReload() async -> Bool {
+        confirmReloadCallCount += 1
+        return confirmReloadResult
+    }
+    func alert(title: String, message: String) async {
+        alerts.append((title, message))
+    }
 }

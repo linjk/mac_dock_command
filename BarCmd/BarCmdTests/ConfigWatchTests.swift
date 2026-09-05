@@ -52,4 +52,35 @@ final class ConfigWatchTests: XCTestCase {
 
         wait(for: [fired], timeout: 1.5)
     }
+
+    func testLoadBaselinesLastWrittenHash() throws {
+        try writeExistingYAML()
+        _ = try store.load()
+        XCTAssertEqual(store.lastWrittenHash, try store.currentFileHash())
+    }
+
+    func testDirectoryEventWithoutContentChangeDoesNotFire() throws {
+        try writeExistingYAML()
+        _ = try store.load()
+
+        let unexpected = expectation(description: "hash-unchanged directory event should not fire")
+        unexpected.isInverted = true
+        store.startWatching {
+            unexpected.fulfill()
+        }
+
+        let sibling = dir.appendingPathComponent("unrelated.txt")
+        try "x".write(to: sibling, atomically: true, encoding: .utf8)
+        wait(for: [unexpected], timeout: 1.0)
+    }
+
+    private func writeExistingYAML() throws {
+        let yaml = """
+        commands:
+          - id: "33333333-3333-3333-3333-333333333333"
+            name: "B"
+            command: "echo"
+        """
+        try yaml.write(to: store.fileURL, atomically: true, encoding: .utf8)
+    }
 }
