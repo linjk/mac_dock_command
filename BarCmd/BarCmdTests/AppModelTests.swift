@@ -152,9 +152,38 @@ final class AppModelTests: XCTestCase {
         XCTAssertEqual(model.runningCount, 1)
     }
 
+    func testPollSetsPortFromLsof() async throws {
+        let id = UUID()
+        let config = CommandConfig(id: id, name: "web", command: "echo ok")
+        let (model, _, _, _, _) = try makeHarness(
+            configs: [config],
+            lsof: FakeLsofClient(ports: [5173])
+        )
+        await model.start(id)
+        await model.pollPortsOnce(id: id)
+        XCTAssertEqual(model.runtime(id).port, 5173)
+    }
+
+    func testLogLineWithoutPortDoesNotClearLsofMergedPort() async throws {
+        let id = UUID()
+        let config = CommandConfig(id: id, name: "web", command: "echo ok")
+        let (model, _, processes, logs, _) = try makeHarness(
+            configs: [config],
+            lsof: FakeLsofClient(ports: [5173])
+        )
+        await model.start(id)
+        await model.pollPortsOnce(id: id)
+        XCTAssertEqual(model.runtime(id).port, 5173)
+
+        processes.emit(id: id, line: "compiling module")
+        await waitUntil { logs.lines(id: id).contains(where: { $0.contains("compiling module") }) }
+        XCTAssertEqual(model.runtime(id).port, 5173)
+    }
+
     private func makeHarness(
         configs: [CommandConfig],
-        prompter: FakePrompter = FakePrompter()
+        prompter: FakePrompter = FakePrompter(),
+        lsof: LsofClient = FakeLsofClient()
     ) throws -> (AppModel, ConfigStore, FakeProcess, LogBufferStore, FakePrompter) {
         let dir = FileManager.default.temporaryDirectory
             .appendingPathComponent("barcmd-appmodel-\(UUID().uuidString)", isDirectory: true)
@@ -169,7 +198,7 @@ final class AppModelTests: XCTestCase {
             processes: processes,
             logs: logs,
             prompter: prompter,
-            lsof: FakeLsofClient()
+            lsof: lsof
         )
         return (model, store, processes, logs, prompter)
     }

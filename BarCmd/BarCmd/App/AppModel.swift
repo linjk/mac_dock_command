@@ -28,6 +28,7 @@ final class AppModel {
     private var portTrackers: [UUID: PortTracker] = [:]
     private var portPollTasks: [UUID: Task<Void, Never>] = [:]
     private var consecutiveEmptyLsof: [UUID: Int] = [:]
+    private var lastLsofPorts: [UUID: [Int]] = [:]
 
     init(
         store: ConfigStore,
@@ -229,11 +230,9 @@ final class AppModel {
     private func handleOutput(id: UUID, line: String) {
         logs.append(id: id, line: line)
         var tracker = portTrackers[id] ?? PortTracker()
-        let port = tracker.ingestLogLine(line)
+        _ = tracker.ingestLogLine(line)
         portTrackers[id] = tracker
-        var r = runtime(id)
-        r.port = port
-        runtimes[id] = r
+        applyMergedPort(id)
     }
 
     private func handleExit(id: UUID, code: Int32) {
@@ -261,6 +260,10 @@ final class AppModel {
             logs.remove(id: id)
             portTrackers[id] = nil
         }
+    }
+
+    func pollPortsOnce(id: UUID) async {
+        await pollPorts(id: id)
     }
 
     private func startPortPolling(_ id: UUID) {
@@ -296,17 +299,21 @@ final class AppModel {
 
         guard runtime(id).status == .running else { return }
 
+        lastLsofPorts[id] = ports
         if ports.isEmpty {
             consecutiveEmptyLsof[id, default: 0] += 1
         } else {
             consecutiveEmptyLsof[id] = 0
         }
-        let emptyCount = consecutiveEmptyLsof[id] ?? 0
+        applyMergedPort(id)
+    }
+
+    private func applyMergedPort(_ id: UUID) {
         var r = runtime(id)
         r.port = PortDetector.merge(
             logPort: portTrackers[id]?.logPort,
-            lsofPorts: ports,
-            consecutiveEmptyLsof: emptyCount
+            lsofPorts: lastLsofPorts[id] ?? [],
+            consecutiveEmptyLsof: consecutiveEmptyLsof[id] ?? 0
         )
         runtimes[id] = r
     }
@@ -315,6 +322,7 @@ final class AppModel {
         portPollTasks[id]?.cancel()
         portPollTasks[id] = nil
         consecutiveEmptyLsof[id] = nil
+        lastLsofPorts[id] = nil
     }
 
     private func removeConfig(_ id: UUID) {

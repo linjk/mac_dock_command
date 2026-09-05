@@ -18,10 +18,10 @@ Task 10 已完成：真 lsof 轮询。下一步 Task 11（FSEvents 与退出协�
 - Task 4：`ANSIStripper` / `LogBufferStore`；`ANSIStripperTests` 4 例 + `LogBufferTests` 4 例通过（CSI/OSC/Vite 行、入队前剥离、超 10000 丢最旧、clear 留槽、remove 丢掉）
 - Task 5：`PortDetector` / `PortTracker` / `LsofParser`；`LsofClient` 仅 protocol；`PortDetectorTests` 11 例通过（四级正则、拒绝时间/版本、优先级覆盖、交集/最小用户端口/连续空 lsof、`:port (LISTEN)` 解析）。未跑真 `lsof`
 - Task 6：`ProcessControlling` / `ProcessSpawner` / `ProcessTree` / `ProcessManager`；`ProcessSpawnerTests` 2 例 + `ProcessManagerTests` 2 例通过（zsh/bash source rc 与 export、echo 退出码 3、stdout+stderr、`sleep 30` 在 8s 内被杀掉）。未接 AppModel
-- Task 7：`UserPrompter` / `AppModel`；`AppModelTests` 10 例通过（启停状态机、cwd 缺失中文日志、编辑/删除闸门、外部 YAML 删掉运行中命令先挂起）。无 SwiftUI；`requestQuit` 仅 `NSApp.terminate(nil)`；lsof 轮询留给 Task 10
+- Task 7：`UserPrompter` / `AppModel`；`AppModelTests` 12 例通过（启停状态机、cwd 缺失中文日志、编辑/删除闸门、外部 YAML 删掉运行中命令先挂起、lsof 端口不被无端口日志行清掉）。无 SwiftUI；`requestQuit` 仅 `NSApp.terminate(nil)`
 - Task 8：`MenuBarView` / `CommandRowView` / `CommandEditSheet` / `AlertPrompter`；空 `AppDelegate` 仅 `.accessory`；`load()` 失败写 `loadError` 并试 `.bak`。无日志 WindowGroup（Task 9）；退出确认留给 Task 11
 - Task 9：`LogWindowView` + `WindowGroup(id: "command-log")`；📋 经 `openWindow` 打开；关窗不停进程。未手测 `echo line1; echo line2; sleep 5`
-- Task 10：`LsofCommand` / `RealLsofClient` + AppModel 每 2s 进程组 lsof；`LsofClientTests` 3 例通过。空 pid 不 spawn；非 0 退出当本轮 `[]`。未手测 `npx` 外壳子进程端口
+- Task 10：`LsofCommand` / `RealLsofClient` + AppModel 每 2s 进程组 lsof；`LsofClientTests` 3 例通过。空 pid 不 spawn；非 0 退出当本轮 `[]`。日志行经 `PortDetector.merge` 更新端口，不再用裸 `ingestLogLine` 覆盖 lsof 结果。未手测 `npx` 外壳子进程端口
 
 ## 进行中
 
@@ -38,6 +38,7 @@ Task 10 已完成：真 lsof 轮询。下一步 Task 11（FSEvents 与退出协�
 
 ## 最近验证
 
+- 2026-09-05：Task 10 review：`handleOutput` 改为 `PortDetector.merge`；`AppModelTests` RED（无端口日志行把 5173 清成 nil）后 GREEN（12 tests, 0 failures）；全量 `xcodebuild … test` → **TEST SUCCEEDED**（Executed 47 tests, 0 failures）
 - 2026-09-05：Task 10 `xcodebuild … test -only-testing:BarCmdTests/LsofClientTests` → RED（`LsofCommand`/`RealLsofClient` 找不到）后 GREEN（3 tests, 0 failures）；与 AppModelTests 合计 13/0；全量 `xcodebuild … test` → **TEST SUCCEEDED**（Executed 45 tests, 0 failures）
 - 2026-09-05：Task 9 `xcodebuild … test` → **TEST SUCCEEDED**（Executed 42 tests, 0 failures）；`xcodebuild … build` → **BUILD SUCCEEDED**
 - 2026-09-05：`pendingEdit` 收到 `AppModel` 后 `AppModelTests` 10/0、全量 42/0，`** TEST SUCCEEDED **`
