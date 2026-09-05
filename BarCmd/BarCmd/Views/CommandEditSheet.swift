@@ -40,7 +40,7 @@ struct CommandEditSheet: View {
             HStack {
                 Spacer()
                 Button("取消") { dismiss() }
-                Button("保存") { save() }
+                Button("保存") { Task { await save() } }
                     .keyboardShortcut(.defaultAction)
                     .disabled(!canSave)
             }
@@ -54,7 +54,7 @@ struct CommandEditSheet: View {
             && !command.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    private func save() {
+    private func save() async {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedCommand = command.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedCWD = cwd.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -66,9 +66,9 @@ struct CommandEditSheet: View {
             env: Self.parseEnv(envText)
         )
         if isNew {
-            model.add(config)
+            await model.add(config)
         } else {
-            model.update(config)
+            await model.update(config)
         }
         dismiss()
     }

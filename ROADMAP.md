@@ -40,6 +40,7 @@ Task 12：自动化测试已通过；README 已补。手动清单未全部手测
 
 ## 最近验证
 
+- 2026-09-05：整分支评审三项 Important：`start`/`handleExit` 清空 PortTracker；ProcessManager 按 pid 匹配退出并等 teardown；`persist` 失败 `prompter.alert`「保存配置失败」。覆盖 `AppModelTests` 16/0 + `ProcessManagerTests` 3/0；全量 `xcodebuild -project BarCmd/BarCmd.xcodeproj -scheme BarCmd -destination 'platform=macOS' test` → **TEST SUCCEEDED**（Executed 56 tests, 0 failures）
 - 2026-09-02：Task 12 全量 `xcodebuild -project BarCmd/BarCmd.xcodeproj -scheme BarCmd -destination 'platform=macOS' test` → **TEST SUCCEEDED**（Executed 53 tests, 0 failures）
 - 2026-09-02：启动 Debug `BarCmd.app`（pid 曾为 44478）。Dock 常规应用列表无 BarCmd；进程 `background only`。`LSUIElement` + `setActivationPolicy(.accessory)` 与此一致
 - 2026-09-02：外部改写 `~/Library/Application Support/BarCmd/commands.yaml` 后，BarCmd 弹出约 260×176 窗口（重载确认）。未点「重载」，列表是否更新 **待确认**

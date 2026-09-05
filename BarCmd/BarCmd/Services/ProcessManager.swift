@@ -34,7 +34,8 @@ actor ProcessManager: ProcessControlling {
     }
 
     private var runtimes: [UUID: Runtime] = [:]
-    private var pendingExits: [UUID: Int32] = [:]
+    private var pendingExits: [Int32: Int32] = [:]
+    private var teardownWaiters: [UUID: [CheckedContinuation<Void, Never>]] = [:]
 
     func start(
         config: CommandConfig,
@@ -74,13 +75,14 @@ actor ProcessManager: ProcessControlling {
                     }
                 }
                 let code = proc.terminationStatus
+                let terminatedPID = proc.processIdentifier
                 Task {
-                    await self.didTerminate(id: id, code: code, onExit: onExit)
+                    await self.didTerminate(id: id, pid: terminatedPID, code: code, onExit: onExit)
                 }
             }
         }
 
-        if let code = pendingExits.removeValue(forKey: id) {
+        if let code = pendingExits.removeValue(forKey: pid) {
             onExit(id, code)
             return
         }
@@ -89,6 +91,7 @@ actor ProcessManager: ProcessControlling {
 
     func stop(id: UUID) async {
         guard var runtime = runtimes[id] else { return }
+        let pid = runtime.pid
         runtime.stopRequested = true
         runtimes[id] = runtime
 
@@ -98,6 +101,7 @@ actor ProcessManager: ProcessControlling {
             signal(runtime, SIGKILL)
             await waitWhileRunning(runtime.process, seconds: 2)
         }
+        await waitForTeardown(id: id, pid: pid)
     }
 
     func stopAll() async {
@@ -118,13 +122,58 @@ actor ProcessManager: ProcessControlling {
 
     private func didTerminate(
         id: UUID,
+        pid: Int32,
         code: Int32,
         onExit: @escaping @Sendable (UUID, Int32) -> Void
     ) {
-        if runtimes.removeValue(forKey: id) != nil {
+        if let current = runtimes[id], current.pid == pid {
+            runtimes.removeValue(forKey: id)
             onExit(id, code)
-        } else {
-            pendingExits[id] = code
+            resumeTeardownWaiters(id: id)
+            return
+        }
+        if runtimes[id] == nil {
+            pendingExits[pid] = code
+        }
+    }
+
+    private func waitForTeardown(id: UUID, pid: Int32) async {
+        if runtimes[id]?.pid != pid {
+            return
+        }
+        await withTaskGroup(of: Void.self) { group in
+            group.addTask {
+                await self.suspendUntilTeardown(id: id, pid: pid)
+            }
+            group.addTask {
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                await self.timeoutTeardown(id: id, pid: pid)
+            }
+            await group.next()
+            group.cancelAll()
+        }
+    }
+
+    private func suspendUntilTeardown(id: UUID, pid: Int32) async {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            if runtimes[id]?.pid != pid {
+                continuation.resume()
+                return
+            }
+            teardownWaiters[id, default: []].append(continuation)
+        }
+    }
+
+    private func timeoutTeardown(id: UUID, pid: Int32) {
+        guard runtimes[id]?.pid == pid else { return }
+        runtimes.removeValue(forKey: id)
+        resumeTeardownWaiters(id: id)
+    }
+
+    private func resumeTeardownWaiters(id: UUID) {
+        let waiters = teardownWaiters.removeValue(forKey: id) ?? []
+        for waiter in waiters {
+            waiter.resume()
         }
     }
 

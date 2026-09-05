@@ -73,7 +73,9 @@ final class AppModel {
         var r = runtime(id)
         r.status = .starting
         r.exitCode = nil
+        r.port = nil
         runtimes[id] = r
+        portTrackers[id] = nil
 
         let cwd = PathExpand.expand(config.cwd)
         var isDirectory: ObjCBool = false
@@ -102,10 +104,13 @@ final class AppModel {
             )
             guard runtime(id).status == .starting else { return }
             r = runtime(id)
-            if let snap = await processes.runtimeSnapshot(id: id) {
-                r.pid = snap.pid
-                r.pgid = snap.pgid
+            guard let snap = await processes.runtimeSnapshot(id: id) else {
+                r.status = .exited
+                runtimes[id] = r
+                return
             }
+            r.pid = snap.pid
+            r.pgid = snap.pgid
             guard runtime(id).status == .starting else { return }
             r.startedAt = Date()
             r.status = .running
@@ -142,24 +147,24 @@ final class AppModel {
         }
     }
 
-    func add(_ draft: CommandConfig) {
+    func add(_ draft: CommandConfig) async {
         configs.append(draft)
         if runtimes[draft.id] == nil {
             runtimes[draft.id] = CommandRuntime()
         }
-        persist()
+        await persist()
     }
 
-    func update(_ config: CommandConfig) {
+    func update(_ config: CommandConfig) async {
         if let index = configs.firstIndex(where: { $0.id == config.id }) {
             configs[index] = config
         }
-        persist()
+        await persist()
     }
 
     func delete(_ id: UUID) async {
         removeConfig(id)
-        persist()
+        await persist()
     }
 
     func requestEdit(_ id: UUID) async -> Bool {
@@ -183,7 +188,7 @@ final class AppModel {
         let name = configs.first(where: { $0.id == id })?.name ?? ""
         guard await prompter.confirmDelete(name: name) else { return false }
         removeConfig(id)
-        persist()
+        await persist()
         return true
     }
 
@@ -270,11 +275,11 @@ final class AppModel {
             r.exitCode = code
         }
         runtimes[id] = r
+        portTrackers[id] = nil
         if r.removedFromConfig {
             configs.removeAll { $0.id == id }
             runtimes[id] = nil
             logs.remove(id: id)
-            portTrackers[id] = nil
         }
     }
 
@@ -349,8 +354,12 @@ final class AppModel {
         portTrackers[id] = nil
     }
 
-    private func persist() {
+    private func persist() async {
         let writable = configs.filter { runtimes[$0.id]?.removedFromConfig != true }
-        try? store.save(writable)
+        do {
+            try store.save(writable)
+        } catch {
+            await prompter.alert(title: "保存配置失败", message: "保存配置失败：\(error.localizedDescription)")
+        }
     }
 }

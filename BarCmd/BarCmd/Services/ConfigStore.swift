@@ -19,7 +19,7 @@ struct ConfigError: Error, LocalizedError {
     }
 }
 
-final class ConfigStore {
+class ConfigStore {
     let directory: URL
     let fileURL: URL
     let backupURL: URL

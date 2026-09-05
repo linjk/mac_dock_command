@@ -38,6 +38,43 @@ final class ProcessManagerTests: XCTestCase {
         let after = await mgr.runtimeSnapshot(id: id)
         XCTAssertNil(after)
     }
+
+    func testStopThenImmediateStartDoesNotKillSecondProcess() async throws {
+        let mgr = ProcessManager()
+        let id = UUID()
+        let config = CommandConfig(id: id, name: "s", command: "sleep 30")
+        let cwd = URL(fileURLWithPath: NSHomeDirectory())
+        let firstExits = Locked(0)
+        let secondExits = Locked(0)
+        let secondShouldStay = expectation(description: "second process stays up")
+        secondShouldStay.isInverted = true
+
+        try await mgr.start(config: config, cwd: cwd, onOutput: { _, _ in }, onExit: { _, _ in
+            firstExits.value += 1
+        })
+        let firstPID = await mgr.runtimeSnapshot(id: id)?.pid
+        XCTAssertNotNil(firstPID)
+
+        await mgr.stop(id: id)
+        let afterStop = await mgr.runtimeSnapshot(id: id)
+        XCTAssertNil(afterStop, "stop must finish teardown before returning")
+
+        try await mgr.start(config: config, cwd: cwd, onOutput: { _, _ in }, onExit: { _, _ in
+            secondExits.value += 1
+            secondShouldStay.fulfill()
+        })
+        let secondPID = await mgr.runtimeSnapshot(id: id)?.pid
+        XCTAssertNotNil(secondPID, "second start must actually spawn")
+        XCTAssertNotEqual(secondPID, firstPID)
+
+        await fulfillment(of: [secondShouldStay], timeout: 1.0)
+        XCTAssertEqual(secondExits.value, 0)
+        let stillSecond = await mgr.runtimeSnapshot(id: id)?.pid
+        XCTAssertEqual(stillSecond, secondPID)
+
+        await mgr.stop(id: id)
+        XCTAssertEqual(firstExits.value, 1)
+    }
 }
 
 final class Locked<T>: @unchecked Sendable {

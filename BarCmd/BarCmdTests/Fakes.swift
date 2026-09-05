@@ -72,8 +72,12 @@ final class FakeProcess: ProcessControlling, @unchecked Sendable {
     }
 }
 
-struct FakeLsofClient: LsofClient {
-    var ports: [Int] = []
+final class FakeLsofClient: LsofClient, @unchecked Sendable {
+    var ports: [Int]
+
+    init(ports: [Int] = []) {
+        self.ports = ports
+    }
 
     func listeningPorts(pids: [Int32]) throws -> [Int] { ports }
 }
@@ -97,5 +101,17 @@ final class FakePrompter: UserPrompter {
     }
     func alert(title: String, message: String) async {
         alerts.append((title, message))
+    }
+}
+
+final class FailingSaveStore: ConfigStore {
+    var failSave = false
+    var saveErrorMessage = "disk full"
+
+    override func save(_ configs: [CommandConfig]) throws {
+        if failSave {
+            throw ConfigError(message: saveErrorMessage)
+        }
+        try super.save(configs)
     }
 }

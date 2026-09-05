@@ -206,6 +206,70 @@ final class AppModelTests: XCTestCase {
         XCTAssertNotNil(model.loadError)
     }
 
+    func testRestartClearsStalePortFromPreviousRun() async throws {
+        let id = UUID()
+        let config = CommandConfig(id: id, name: "web", command: "echo ok")
+        let lsof = FakeLsofClient(ports: [5173])
+        let (model, _, processes, logs, _) = try makeHarness(configs: [config], lsof: lsof)
+
+        await model.start(id)
+        processes.emit(id: id, line: "  ➜  Local:   http://localhost:5173/")
+        await waitUntil { logs.lines(id: id).contains(where: { $0.contains("5173") }) }
+        await model.pollPortsOnce(id: id)
+        XCTAssertEqual(model.runtime(id).port, 5173)
+
+        await model.stop(id)
+        await waitUntil { model.runtime(id).status == .stopped }
+        XCTAssertNil(model.runtime(id).port)
+
+        lsof.ports = []
+        await model.start(id)
+        XCTAssertEqual(model.runtime(id).status, .running)
+        XCTAssertNil(model.runtime(id).port, "restart must not keep the previous port")
+
+        processes.emit(id: id, line: "compiling module")
+        await waitUntil { logs.lines(id: id).contains(where: { $0.contains("compiling module") }) }
+        await model.pollPortsOnce(id: id)
+        XCTAssertNil(model.runtime(id).port, "stale PortTracker must not restore 5173")
+
+        lsof.ports = [5174]
+        processes.emit(id: id, line: "  ➜  Local:   http://localhost:5174/")
+        await waitUntil { logs.lines(id: id).contains(where: { $0.contains("5174") }) }
+        await model.pollPortsOnce(id: id)
+        XCTAssertEqual(model.runtime(id).port, 5174)
+    }
+
+    func testPersistSaveFailureAlerts() async throws {
+        let id = UUID()
+        let config = CommandConfig(id: id, name: "web", command: "echo ok")
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("barcmd-appmodel-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        scratchDirs.append(dir)
+
+        let store = FailingSaveStore(directory: dir)
+        try store.save([config])
+        store.failSave = true
+
+        let prompter = FakePrompter()
+        let model = AppModel(
+            store: store,
+            processes: FakeProcess(),
+            logs: LogBufferStore(),
+            prompter: prompter,
+            lsof: FakeLsofClient()
+        )
+
+        await model.add(CommandConfig(id: UUID(), name: "other", command: "echo"))
+        await waitUntil { !prompter.alerts.isEmpty }
+        XCTAssertEqual(prompter.alerts.first?.title, "保存配置失败")
+        XCTAssertTrue(
+            prompter.alerts.first?.message.contains("保存配置失败") == true,
+            "alert message was \(prompter.alerts.first?.message ?? "nil")"
+        )
+        XCTAssertTrue(prompter.alerts.first?.message.contains("disk full") == true)
+    }
+
     func testLogLineWithoutPortDoesNotClearLsofMergedPort() async throws {
         let id = UUID()
         let config = CommandConfig(id: id, name: "web", command: "echo ok")
