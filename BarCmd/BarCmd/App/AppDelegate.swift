@@ -3,6 +3,12 @@ import AppKit
 final class AppDelegate: NSObject, NSApplicationDelegate {
     var model: AppModel!
 
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        if let bundleID = Bundle.main.bundleIdentifier {
+            SingleInstanceGuard.terminateSiblings(bundleIdentifier: bundleID)
+        }
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
         model.beginWatching()

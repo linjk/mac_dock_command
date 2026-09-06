@@ -45,6 +45,8 @@ cat VERSION                       # 看当前版本
 
 `--install` 会结束正在运行的 BarCmd，不删 `~/Library/Application Support/BarCmd/commands.yaml`。Adhoc 签名，未公证；Gatekeeper 可能提示。登录项请用 `/Applications` 里这份，并在菜单栏打开「登录时启动」。Debug / Xcode Run 的包登录项不可靠。
 
+手动升级：直接打开新的 `BarCmd.app` 即可，同 Bundle ID 的旧实例会被自动结束。若已出现两个菜单栏图标，先执行 `killall BarCmd`，再只打开 `/Applications/BarCmd.app`。
+
 ## 文档
 
 - 规格：`docs/superpowers/specs/2026-08-30-mac-menu-bar-command-runner-design.md`

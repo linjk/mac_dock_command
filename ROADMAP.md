@@ -33,7 +33,7 @@
 
 ## 待办
 
-- 手动验证（待确认）：`./scripts/release.sh --install` 后 `/Applications/BarCmd.app` 可开；底栏「登录时启动」与首次确认；覆盖安装后 YAML 仍在。Debug 包登录项不可靠
+- 手动验证（待确认）：升级后菜单栏只应有一个图标（`SingleInstanceGuard` 启动时结束同 Bundle ID 旧进程）。若已双图标：`killall BarCmd` 后只开 `/Applications/BarCmd.app`
 - 手动验证（待确认）：打开菜单栏应同时看到 echo-test 与 DSH（打开 Extra 会 `applyExternalReload`，列表按行数定高；无 Accessibility，未手点）
 - 手动验证（待确认）：再次打开编辑窗口后，点 Name / Command 输入框，窗口应保持打开并可输入（已从 Extra `.sheet` 改为独立 `WindowGroup`；无 Accessibility，未手点）
 - 手动验证（待确认）：`npx @deepseek-ai/dsh web` 启停与 `:port`、nvm/conda 命令里能找到二进制、有 running 时退出杀进程组、运行中点编辑/删除必须先停、菜单栏 glyph 肉眼确认

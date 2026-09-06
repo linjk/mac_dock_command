@@ -415,6 +415,7 @@ Popover 宽度约 420pt。列表按行数给明确高度（单行约 76pt，最�
 - `UserDefaults` 键 `loginItemPrompted`：首次 Extra 出现问一次「登录 Mac 时启动 BarCmd？」
 - `requiresApproval` 时 `prompter.alert`「请在系统设置 → 通用 → 登录项中允许 BarCmd」
 - 登录项跟 Bundle ID `com.dorian.barcmd`；覆盖 `/Applications/BarCmd.app` 不必重注册
+- 启动时 `applicationWillFinishLaunching` 对同 Bundle ID 的其它进程 `forceTerminate`，避免升级后菜单栏双图标（旧 Debug + 新 Release 并存）
 - Debug / DerivedData 里的包登录项不可靠，以 `/Applications` 的 Release 为准
 
 `MenuBarExtra` 关掉后不会因为 `configs` 变了而重算 body（编辑独立窗口会拆掉 Extra）。`BarCmdApp.body` 必须直接读 `model.configs`，并把 Extra 内容 `.id` 绑到命令 ID 列表，否则保存成功、YAML 有了，列表仍是旧的。
