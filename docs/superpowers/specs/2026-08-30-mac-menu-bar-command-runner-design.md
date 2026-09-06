@@ -135,7 +135,7 @@ commands:
 - **状态指示：** 绿 `running`、灰 `stopped`、红 `exited`；`starting` 为灰点 + 小转圈（spawn 成功即转 `running`，不依赖端口）
 - **主行：** name + 操作按钮（▶ 启动 / ⏹ 停止 / 📋 日志 / ✎ 编辑 / 🗑 删除）
 - **副行：** 完整 command 文本（可截断 + tooltip）
-- **状态行：** `PID · :port · status`；无端口时不显示端口段
+- **状态行：** `PID · :port · 时长/状态`；运行中用 `startedAt` 实时计时；无端口时不显示端口段
 - **:port** 可点击，系统浏览器打开 `http://127.0.0.1:{port}`
 
 底部操作：

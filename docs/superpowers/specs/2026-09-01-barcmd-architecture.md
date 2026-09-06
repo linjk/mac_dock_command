@@ -341,7 +341,7 @@ YAML 字段：`id`（UUID 字符串）、`name`、`command`、`cwd`（省略则 
 | 文件 | 职责 |
 |------|------|
 | `MenuBarView` | 列表、底栏（添加 / 登录时启动 / 打开配置 / 退出）、空状态「还没有命令」 |
-| `CommandRowView` | 状态点、名称、按钮、副行、PID/port |
+| `CommandRowView` | 状态点、名称、按钮、副行、PID/port/运行时长 |
 | `CommandEditSheet` | 添加与编辑共用（独立窗口，不挂 Extra） |
 | `LogWindowView` | 等宽、深色、自动滚底；复制全部、清屏；PID/port/时长 |
 

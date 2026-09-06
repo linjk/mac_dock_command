@@ -105,22 +105,10 @@ struct LogWindowView: View {
             if let port = runtime.port {
                 Text(":\(port)")
             }
-            durationLabel
+            RuntimeDurationLabel(runtime: runtime)
         }
         .font(.caption)
         .foregroundStyle(.secondary)
-    }
-
-    @ViewBuilder
-    private var durationLabel: some View {
-        switch runtime.status {
-        case .stopped, .exited:
-            Text("已结束")
-        case .starting, .running:
-            if let startedAt = runtime.startedAt {
-                Text(startedAt, style: .timer)
-            }
-        }
     }
 
     private func refreshNearBottom() {

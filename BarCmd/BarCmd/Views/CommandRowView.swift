@@ -40,7 +40,7 @@ struct CommandRowView: View {
                     }
                     .buttonStyle(.plain)
                 }
-                Text(statusText)
+                RuntimeDurationLabel(runtime: runtime, fallbackStatus: statusText)
             }
             .font(.caption)
             .foregroundStyle(.secondary)
